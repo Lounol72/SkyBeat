@@ -1,0 +1,101 @@
+code,description
+00,Pas de phénomène significatif
+01,Nuages se dissipant
+02,État du ciel inchangé
+03,Nuages se formant
+04,Visibilité réduite par fumée
+05,Brume sèche
+06,Poussière en suspension
+07,Poussière ou sable soulevé
+08,Tourbillons de poussière
+09,Tempête de poussière ou de sable faible
+10,Brume
+11,Bancs de brume
+12,Brume dense
+13,Éclairs visibles sans tonnerre
+14,Précipitations en vue
+15,Précipitations éloignées
+16,Précipitations proches
+17,Orage sans précipitations
+18,Grains
+19,Trombe ou tornade
+20,Bruine ou neige fondue passée
+21,Pluie passée
+22,Neige passée
+23,Pluie et neige fondue passées
+24,Pluie verglaçante passée
+25,Averses passées
+26,Grésil passé
+27,Grêle passée
+28,Brouillard passé
+29,Orage passé
+30,Tempête de poussière faible
+31,Tempête de poussière modérée
+32,Tempête de poussière forte
+33,Tempête de poussière diminuant
+34,Tempête de poussière sans changement
+35,Tempête de poussière augmentant
+36,Chasse-neige faible
+37,Chasse-neige modérée
+38,Chasse-neige forte
+39,Forte tempête de neige
+40,Brouillard à distance
+41,Brouillard par bancs
+42,Brouillard mince
+43,Brouillard mince avec ciel visible
+44,Brouillard mince ciel invisible
+45,Brouillard
+46,Brouillard givrant
+47,Brouillard dense
+48,Brouillard givrant dense
+49,Brouillard dense avec givre
+50,Bruine faible discontinue
+51,Bruine faible continue
+52,Bruine modérée discontinue
+53,Bruine modérée continue
+54,Bruine forte discontinue
+55,Bruine forte continue
+56,Bruine verglaçante faible
+57,Bruine verglaçante modérée ou forte
+58,Bruine et pluie faibles
+59,Bruine et pluie fortes
+60,Pluie faible discontinue
+61,Pluie faible continue
+62,Pluie modérée discontinue
+63,Pluie modérée continue
+64,Pluie forte discontinue
+65,Pluie forte continue
+66,Pluie verglaçante faible
+67,Pluie verglaçante modérée ou forte
+68,Pluie et neige faibles
+69,Pluie et neige fortes
+70,Neige faible discontinue
+71,Neige faible continue
+72,Neige modérée discontinue
+73,Neige modérée continue
+74,Neige forte discontinue
+75,Neige forte continue
+76,Poudre de neige
+77,Grains de neige
+78,Neige et pluie faibles
+79,Neige et pluie fortes
+80,Averses de pluie faibles
+81,Averses de pluie modérées
+82,Averses de pluie fortes
+83,Averses de pluie et neige
+84,Averses de neige
+85,Averses de neige faibles
+86,Averses de neige fortes
+87,Averses de grésil
+88,Averses de grêle faibles
+89,Averses de grêle fortes
+90,Orage sans précipitations
+91,Orage avec pluie faible
+92,Orage avec pluie modérée
+93,Orage avec pluie forte
+94,Orage avec grêle
+95,Orage
+96,Orage avec grêle faible
+97,Orage avec grêle forte
+98,Orage avec tempête de poussière
+99,Orage violent

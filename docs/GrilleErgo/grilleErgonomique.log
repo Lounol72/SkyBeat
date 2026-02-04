@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.22 (TeX Live 2022/dev/Debian) (preloaded format=pdflatex 2025.11.18)  4 FEB 2026 09:57
+This is pdfTeX, Version 3.141592653-2.6-1.40.22 (TeX Live 2022/dev/Debian) (preloaded format=pdflatex 2025.11.18)  4 FEB 2026 10:32
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -200,6 +200,9 @@ ce $\U/msa/m/n/10.95 ^^C$  \T1/cmr/m/n/10.95 Institutionnel $\U/msa/m/n/10.95 ^
 ^C$
  []
 
+! I can't write on file `grilleErgonomique.pdf'.
+(Press Enter to retry, or Control-D to exit; default file extension is `.pdf')
+Please type another file name for output: grilleErgonomique.pdf
 [1
 
 {/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}] [2]
@@ -218,7 +221,7 @@ our/jknappen/ec/ecrm1095.600pk> </home/nathan/.texlive2021/texmf-var/fonts/pk/l
 jfour/jknappen/ec/ecbx1200.600pk> </home/nathan/.texlive2021/texmf-var/fonts/pk
 /ljfour/jknappen/ec/ecbx1440.600pk></usr/share/texlive/texmf-dist/fonts/type1/p
 ublic/amsfonts/symbols/msam10.pfb>
-Output written on grilleErgonomique.pdf (2 pages, 52801 bytes).
+Output written on grilleErgonomique.pdf (2 pages, 52797 bytes).
 PDF statistics:
  160 PDF objects out of 1000 (max. 8388607)
  25 compressed objects within 1 object stream

@@ -37,6 +37,8 @@ npm install
 
 ```bash
 npm start
+# Ou
+ng serve --host 0.0.0.0 --port 4200 
 ```
 
 Ouvrez votre navigateur sur `http://localhost:4200/`

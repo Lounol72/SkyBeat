@@ -21,3 +21,227 @@ a,
 button {
   transition: color 0.25s ease, background-color 0.25s ease, transform 0.25s ease, opacity 0.25s ease;
 }
+
+/* Thème clair (par défaut) */
+body .header {
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+body .menu-content {
+  background: rgba(255, 255, 255, 0.95);
+}
+
+body .login-container,
+body .signup-container,
+body .settings-container {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+body .login-card,
+body .signup-card,
+body .settings-card {
+  background: white;
+}
+
+/* Thème sombre */
+body.dark-theme {
+  background: linear-gradient(180deg, #1a1a2e 0%, #16213e 75%, #0f1419 100%);
+  color: #e4e4e4;
+}
+
+/* Header et menu */
+body.dark-theme .header {
+  background: rgba(26, 26, 46, 0.95);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+
+body.dark-theme .logo a {
+  color: #fff !important;
+}
+
+body.dark-theme .logo a:hover {
+  color: #667eea;
+}
+
+body.dark-theme .hamburger .line {
+  background-color: #fff !important;
+}
+
+body.dark-theme .menu-content {
+  background: rgba(26, 26, 46, 0.95);
+}
+
+body.dark-theme .menu-list a {
+  color: #fff !important;
+}
+
+body.dark-theme .menu-list a:hover {
+  background: rgba(102, 126, 234, 0.2);
+  color: #667eea;
+}
+
+/* Containers et backgrounds */
+body.dark-theme .login-container,
+body.dark-theme .signup-container,
+body.dark-theme .settings-container {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+}
+
+/* Cartes */
+body.dark-theme .login-card,
+body.dark-theme .signup-card,
+body.dark-theme .settings-card {
+  background: rgba(30, 30, 46, 0.95);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+/* Titres */
+body.dark-theme h1,
+body.dark-theme h2 {
+  color: #fff !important;
+}
+
+body.dark-theme .subtitle,
+body.dark-theme .section-description {
+  color: #b0b0b0;
+}
+
+/* Formulaires */
+body.dark-theme .form-group label {
+  color: #fff !important;
+}
+
+body.dark-theme .form-group input {
+  background: rgba(50, 50, 70, 0.6);
+  border-color: #3a3a5a;
+  color: #fff !important;
+}
+
+body.dark-theme .form-group input:focus {
+  border-color: #667eea;
+  background: rgba(60, 60, 80, 0.8);
+}
+
+body.dark-theme .form-group input::placeholder {
+  color: #7a7a9a;
+}
+
+/* Boutons */
+body.dark-theme .btn-secondary {
+  background: rgba(60, 60, 80, 0.8);
+  color: #fff !important;
+}
+
+body.dark-theme .btn-secondary:hover {
+  background: rgba(70, 70, 90, 0.9);
+}
+
+body.dark-theme .btn-social {
+  background: rgba(50, 50, 70, 0.6);
+  border-color: #3a3a5a;
+  color: #fff !important;
+}
+
+body.dark-theme .btn-social:hover {
+  background: rgba(60, 60, 80, 0.8);
+  border-color: #667eea;
+}
+
+/* Dividers */
+body.dark-theme .divider::before {
+  background: #3a3a5a;
+}
+
+body.dark-theme .divider span {
+  background: rgba(30, 30, 46, 0.95);
+  color: #b0b0b0;
+}
+
+/* Settings - Sections */
+body.dark-theme .setting-section {
+  border-bottom-color: #3a3a5a;
+}
+
+body.dark-theme .setting-section h2 {
+  color: #fff !important;
+}
+
+/* Settings - Radio et Toggle options */
+body.dark-theme .radio-content,
+body.dark-theme .toggle-option {
+  background: rgba(50, 50, 70, 0.4);
+  border-color: #3a3a5a;
+}
+
+body.dark-theme .radio-option.selected .radio-content {
+  background: rgba(102, 126, 234, 0.2);
+  border-color: #667eea;
+}
+
+body.dark-theme .radio-text strong,
+body.dark-theme .toggle-text strong {
+  color: #fff !important;
+}
+
+body.dark-theme .radio-text span,
+body.dark-theme .toggle-text span {
+  color: #b0b0b0;
+}
+
+/* Toggle switch */
+body.dark-theme .toggle-switch {
+  background: #3a3a5a;
+}
+
+/* Theme previews */
+body.dark-theme .theme-preview {
+  border-color: #3a3a5a;
+}
+
+body.dark-theme .theme-option.selected .theme-preview {
+  border-color: #667eea;
+}
+
+body.dark-theme .theme-option span {
+  color: #b0b0b0;
+}
+
+body.dark-theme .theme-option.selected span {
+  color: #667eea;
+}
+
+/* Liens */
+body.dark-theme .signup-link,
+body.dark-theme .login-link {
+  color: #b0b0b0;
+}
+
+body.dark-theme .signup-link a,
+body.dark-theme .login-link a {
+  color: #667eea;
+}
+
+/* Landing, Hero, Footer - Dark mode adjustments */
+body.dark-theme .playlist-card {
+  background: rgba(50, 50, 70, 0.3);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+body.dark-theme .playlist-card--purple {
+  background: rgba(102, 126, 234, 0.15);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+body.dark-theme .hero__cta {
+  background: rgba(255, 255, 255, 0.15);
+  color: #e4e4e4;
+}
+
+body.dark-theme .hero__cta:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+body.dark-theme .footer {
+  border-top-color: rgba(255, 255, 255, 0.05);
+}

@@ -1,0 +1,58 @@
+<div class="login-container">
+  <div class="login-card" *ngIf="!isLoggedIn">
+    <h1>Connexion</h1>
+    <p class="subtitle">Connectez-vous pour sauvegarder vos préférences</p>
+
+    <form (ngSubmit)="onLogin()" class="login-form">
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input 
+          type="email" 
+          id="email" 
+          [(ngModel)]="email" 
+          name="email"
+          placeholder="votre@email.com"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="password">Mot de passe</label>
+        <input 
+          type="password" 
+          id="password" 
+          [(ngModel)]="password" 
+          name="password"
+          placeholder="••••••••"
+          required
+        />
+      </div>
+
+      <button type="submit" class="btn-primary">Se connecter</button>
+    </form>
+
+    <div class="divider">
+      <span>ou</span>
+    </div>
+
+    <div class="social-login">
+      <button class="btn-social btn-google">
+        <span>Continuer avec Google</span>
+      </button>
+      <button class="btn-social btn-spotify">
+        <span>Continuer avec Spotify</span>
+      </button>
+    </div>
+
+    <p class="signup-link">
+      Pas encore de compte ? <a routerLink="/signup">S'inscrire</a>
+    </p>
+  </div>
+
+  <div class="login-card" *ngIf="isLoggedIn">
+    <h1>Bienvenue !</h1>
+    <p class="subtitle">Vous êtes connecté</p>
+    <button (click)="onLogout()" class="btn-secondary">Se déconnecter</button>
+    <a routerLink="/" class="btn-primary">Retour à l'accueil</a>
+  </div>
+</div>

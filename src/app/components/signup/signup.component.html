@@ -1,0 +1,82 @@
+<div class="signup-container">
+  <div class="signup-card" *ngIf="!isRegistered">
+    <h1>Créer un compte</h1>
+    <p class="subtitle">Rejoignez SkyBeat et créez vos playlists météo</p>
+
+    <form (ngSubmit)="onSignup()" class="signup-form">
+      <div class="form-group">
+        <label for="username">Nom d'utilisateur</label>
+        <input 
+          type="text" 
+          id="username" 
+          [(ngModel)]="username" 
+          name="username"
+          placeholder="Votre nom"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input 
+          type="email" 
+          id="email" 
+          [(ngModel)]="email" 
+          name="email"
+          placeholder="votre@email.com"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="password">Mot de passe</label>
+        <input 
+          type="password" 
+          id="password" 
+          [(ngModel)]="password" 
+          name="password"
+          placeholder="••••••••"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="confirmPassword">Confirmer le mot de passe</label>
+        <input 
+          type="password" 
+          id="confirmPassword" 
+          [(ngModel)]="confirmPassword" 
+          name="confirmPassword"
+          placeholder="••••••••"
+          required
+        />
+      </div>
+
+      <button type="submit" class="btn-primary">S'inscrire</button>
+    </form>
+
+    <div class="divider">
+      <span>ou</span>
+    </div>
+
+    <div class="social-signup">
+      <button class="btn-social btn-google">
+        <span>S'inscrire avec Google</span>
+      </button>
+      <button class="btn-social btn-spotify">
+        <span>S'inscrire avec Spotify</span>
+      </button>
+    </div>
+
+    <p class="login-link">
+      Vous avez déjà un compte ? <a routerLink="/login">Se connecter</a>
+    </p>
+  </div>
+
+  <div class="signup-card" *ngIf="isRegistered">
+    <h1>Bienvenue !</h1>
+    <p class="subtitle">Votre compte a été créé avec succès</p>
+    <a routerLink="/login" class="btn-primary">Se connecter</a>
+    <a routerLink="/" class="btn-secondary">Retour à l'accueil</a>
+  </div>
+</div>

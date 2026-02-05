@@ -112,7 +112,7 @@ src/app/
 - [ ] Historique des écoutes
 - [ ] Partage de playlists météo
 - [ ] **Création de compte client** avec préférences musicales (Spotify ou YouTube Music)
-- [ ] **Réception quotidienne par email** de la playlist du jour adaptée à la météo
+- [ ] **Réception quotidienne par email** de la playlist du jour adaptée à la météo.
 - [ ] Système de notifications personnalisées
 - [ ] Sauvegarde des playlists favorites
 

@@ -1,0 +1,17 @@
+<p>meteo works!</p>
+<div>
+    <h1>Lieu</h1>
+    <div>
+        <p>Température</p>
+
+        <p *ngIf="temperature !== undefined; else loading">
+        Température : {{ temperature }} °C
+        </p>
+
+        <ng-template #loading>
+        <p>Chargement...</p>
+        </ng-template>
+
+        <img><img>
+    </div>
+</div>

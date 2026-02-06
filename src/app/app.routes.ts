@@ -10,7 +10,7 @@ export const routes: Routes = [
   { path: '', component: LandingComponent },
   { path: 'generate', component: GenerateComponent },
 
-    { path: '', component: Meteo }
+    { path: '', component: Meteo },
   { path: 'login', component: LoginComponent },
   { path: 'signup', component: SignupComponent },
   { path: 'settings', component: SettingsComponent },

@@ -8,12 +8,12 @@ import { ChangeDetectorRef } from '@angular/core';
 
 @Component({
   selector: 'app-meteo',
-  templateUrl: './meteo.html',
+  standalone: true,
+  templateUrl: './meteo.component.html',
   imports: [CommonModule],
-  styleUrl: './meteo.css',
-  standalone: true
+  styleUrl: './meteo.component.css'
 })
-export class Meteo implements OnInit {
+export class MeteoComponent implements OnInit {
 
   temperature?: number;
 

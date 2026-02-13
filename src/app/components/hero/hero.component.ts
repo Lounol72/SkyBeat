@@ -68,7 +68,23 @@ export class HeroComponent implements OnInit {
 
   ngOnInit(): void {
     if (isPlatformBrowser(this.platformId)) {
-      this.getUserLocation();
+      const jsonData = localStorage.getItem("weatherData");
+      if(jsonData){
+        const data = JSON.parse(jsonData);
+        this.weatherData.set({
+          temperature: data.temperature,
+          weatherCode: data.weatherCode,
+          humidity: data.humidity,
+          windSpeed: data.windSpeed,
+          location: data.location
+        });
+        this.isLoadingWeather.set(false);
+        console.log("Weather Data loaded from LocalStorage.")
+      }
+      else{
+        console.log("Weather Data NOT loaded from LocalStorage !")
+        this.getUserLocation();
+      }
     }
   }
 
@@ -127,6 +143,12 @@ export class HeroComponent implements OnInit {
             location: this.locationName(),
           });
           this.isLoadingWeather.set(false);
+
+          /**
+           *  Saving weather data in LocalStorage
+           */
+
+          localStorage.setItem("weatherData", JSON.stringify(this.weatherData()));
         } else {
           this.weatherError.set('Invalid response');
           this.isLoadingWeather.set(false);

@@ -45,6 +45,11 @@ interface WeatherData {
   location: string;
 }
 
+interface WeatherLocalData {
+  weather: WeatherData;
+  fetchDate: number;
+}
+
 @Component({
   selector: 'app-hero',
   standalone: true,
@@ -67,19 +72,33 @@ export class HeroComponent implements OnInit {
   private defaultLongitude = 2.3522;
 
   ngOnInit(): void {
+    /**
+     * CONST
+     */
+    const EXPIRATION_TIME = 1000 * 3600 //One hour
+
     if (isPlatformBrowser(this.platformId)) {
       const jsonData = localStorage.getItem("weatherData");
       if(jsonData){
-        const data = JSON.parse(jsonData);
-        this.weatherData.set({
-          temperature: data.temperature,
-          weatherCode: data.weatherCode,
-          humidity: data.humidity,
-          windSpeed: data.windSpeed,
-          location: data.location
-        });
-        this.isLoadingWeather.set(false);
-        console.log("Weather Data loaded from LocalStorage.")
+        const data: WeatherLocalData = JSON.parse(jsonData);
+        
+        const isExpired = Date.now() - data.fetchDate > EXPIRATION_TIME;
+
+        if(!isExpired){
+          this.weatherData.set({
+            temperature: data.weather.temperature,
+            weatherCode: data.weather.weatherCode,
+            humidity: data.weather.humidity,
+            windSpeed: data.weather.windSpeed,
+            location: data.weather.location
+          });
+          this.isLoadingWeather.set(false);
+          console.log("Weather Data loaded from LocalStorage.")
+        }
+        else{
+          console.log("Weather Data expired, fetching new data.")
+          this.getUserLocation();
+        }
       }
       else{
         console.log("Weather Data NOT loaded from LocalStorage !")
@@ -148,7 +167,12 @@ export class HeroComponent implements OnInit {
            *  Saving weather data in LocalStorage
            */
 
-          localStorage.setItem("weatherData", JSON.stringify(this.weatherData()));
+          const toStore = {
+            weather: this.weatherData(),
+            fetchDate: Date.now()
+          };
+
+          localStorage.setItem("weatherData", JSON.stringify(toStore));
         } else {
           this.weatherError.set('Invalid response');
           this.isLoadingWeather.set(false);

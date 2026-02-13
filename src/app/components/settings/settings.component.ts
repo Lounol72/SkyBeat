@@ -1,5 +1,5 @@
-import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, Inject, OnInit, PLATFORM_ID } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 @Component({
@@ -9,14 +9,15 @@ import { FormsModule } from '@angular/forms';
   templateUrl: './settings.component.html',
   styleUrl: './settings.component.css'
 })
-export class SettingsComponent {
+export class SettingsComponent implements OnInit {
   musicPreference: 'youtube' | 'spotify' = 'youtube';
   autoPlay = true;
   notifications = true;
   theme: 'light' | 'dark' = 'light';
 
+  constructor(@Inject(PLATFORM_ID) private platformId: Object) {}
+
   onSaveSettings() {
-    // Logique pour sauvegarder les paramètres
     console.log('Settings saved:', {
       musicPreference: this.musicPreference,
       autoPlay: this.autoPlay,
@@ -24,28 +25,31 @@ export class SettingsComponent {
       theme: this.theme
     });
     
-    // Sauvegarder dans localStorage
-    localStorage.setItem('musicPreference', this.musicPreference);
-    localStorage.setItem('autoPlay', String(this.autoPlay));
-    localStorage.setItem('notifications', String(this.notifications));
-    localStorage.setItem('theme', this.theme);
-    
-    // Appliquer le thème
-    this.applyTheme(this.theme);
-    
-    alert('Paramètres sauvegardés avec succès !');
+    if (isPlatformBrowser(this.platformId)) {
+      localStorage.setItem('musicPreference', this.musicPreference);
+      localStorage.setItem('autoPlay', String(this.autoPlay));
+      localStorage.setItem('notifications', String(this.notifications));
+      localStorage.setItem('theme', this.theme);
+      this.applyTheme(this.theme);
+      alert('Paramètres sauvegardés avec succès !');
+    }
   }
 
   applyTheme(theme: 'light' | 'dark') {
-    if (theme === 'dark') {
-      document.body.classList.add('dark-theme');
-    } else {
-      document.body.classList.remove('dark-theme');
+    if (isPlatformBrowser(this.platformId)) {
+      if (theme === 'dark') {
+        document.body.classList.add('dark-theme');
+      } else {
+        document.body.classList.remove('dark-theme');
+      }
     }
   }
 
   ngOnInit() {
-    // Charger les paramètres depuis localStorage
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+
     const savedMusicPref = localStorage.getItem('musicPreference');
     if (savedMusicPref === 'youtube' || savedMusicPref === 'spotify') {
       this.musicPreference = savedMusicPref;

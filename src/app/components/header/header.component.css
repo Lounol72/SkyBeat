@@ -1,150 +1,207 @@
 .header {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
+  inset: 0 0 auto 0;
   z-index: 1000;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding-block: 0.35rem;
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  transition: background 0.3s ease;
 }
 
 .header-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 1rem 2rem;
+  padding: 0.4rem 1.5rem;
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
 }
 
-.logo a {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #333;
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* Logo text: keep application name in LTR Federal for strong identity */
+.logo {
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  color: #fff;
   text-decoration: none;
+  font-family: "ltr-federal", var(--font-title), var(--font-ui);
+  transition: color 0.25s ease;
 }
 
-.logo a:hover {
-  color: #007bff;
+.logo:hover {
+  color: rgba(255, 255, 255, 0.8);
 }
 
-/* Menu Hamburger */
 .hamburger {
   display: flex;
-  flex-direction: column;
-  justify-content: space-around;
-  width: 30px;
-  height: 25px;
-  background: transparent;
-  border: none;
-  cursor: pointer;
+  position: relative;
+  width: 44px;
+  height: 32px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
   padding: 0;
-  z-index: 1001;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.25s ease, border-color 0.25s ease;
 }
 
-.hamburger .line {
-  width: 30px;
-  height: 3px;
-  background-color: #333;
-  border-radius: 3px;
+.hamburger:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.3);
 }
 
-.hamburger.active .line:nth-child(1) {
-  transform: rotate(45deg) translate(7px, 7px);
+.hamburger-line {
+  position: absolute;
+  left: 50%;
+  width: 18px;
+  height: 2px;
+  background-color: #fff;
+  border-radius: 999px;
+  transform: translateX(-50%);
+  transition: transform 0.25s ease, opacity 0.25s ease, background-color 0.25s ease;
 }
 
-.hamburger.active .line:nth-child(2) {
+.hamburger-line:nth-child(1) {
+  transform: translate(-50%, -6px);
+}
+
+.hamburger-line:nth-child(2) {
+  transform: translate(-50%, 0);
+}
+
+.hamburger-line:nth-child(3) {
+  transform: translate(-50%, 6px);
+}
+
+.hamburger.active .hamburger-line:nth-child(1) {
+  transform: translate(-50%, 0) rotate(45deg);
+}
+
+.hamburger.active .hamburger-line:nth-child(2) {
   opacity: 0;
 }
 
-.hamburger.active .line:nth-child(3) {
-  transform: rotate(-45deg) translate(7px, -7px);
+.hamburger.active .hamburger-line:nth-child(3) {
+  transform: translate(-50%, 0) rotate(-45deg);
 }
 
-/* Menu */
 .menu {
   position: fixed;
-  top: 0;
-  right: -100%;
-  width: auto;
-  height: 100vh;
+  inset: 0;
   z-index: 999;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.25s ease;
 }
 
 .menu.open {
-  right: 0;
+  pointer-events: auto;
+  opacity: 1;
 }
 
-.menu-content {
+.menu-backdrop {
   position: absolute;
-  top: 0;
-  right: 0;
-  width: 300px;
-  height: 100%;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
-  padding: 2rem;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.menu-panel {
+  position: absolute;
+  top: 76px;
+  right: 1rem;
+  left: 1rem;
+  border-radius: 20px;
+  background: rgba(15, 23, 42, 0.9);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 1.75rem 1.5rem 2rem;
+  max-width: 360px;
+  margin-left: auto;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  transition: background 0.3s ease, border-color 0.3s ease;
 }
 
 .menu-list {
   list-style: none;
   padding: 0;
-  margin-top: 2rem;
-}
-
-.menu-list li {
-  margin-bottom: 1.5rem;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
 .menu-list a {
   display: block;
-  padding: 0.75rem 1rem;
-  color: #333;
+  padding: 0.75rem 0.5rem;
+  color: rgba(255, 255, 255, 0.9);
   text-decoration: none;
-  font-size: 1.1rem;
-  border-radius: 8px;
+  font-size: 0.95rem;
+  border-radius: 12px;
+  transition: background 0.2s ease, color 0.2s ease;
 }
 
 .menu-list a:hover {
-  background: #f0f0f0;
-  color: #007bff;
-}
-
-@media (max-width: 768px) {
-  .menu-content {
-    width: 250px;
-  }
+  background: rgba(255, 255, 255, 0.1);
 }
 
 /* Dark theme */
 :host-context(body.dark-theme) .header {
-  background: rgba(26, 26, 46, 0.95);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+  background: rgba(15, 23, 42, 0.85);
 }
 
-:host-context(body.dark-theme) .logo a {
-  color: #fff !important;
+:host-context(body.dark-theme) .logo {
+  color: #fff;
 }
 
-:host-context(body.dark-theme) .logo a:hover {
-  color: #667eea;
+:host-context(body.dark-theme) .logo:hover {
+  color: rgba(255, 255, 255, 0.8);
 }
 
-:host-context(body.dark-theme) .hamburger .line {
-  background-color: #fff !important;
+:host-context(body.dark-theme) .hamburger {
+  border-color: rgba(255, 255, 255, 0.15);
+  background: rgba(30, 41, 59, 0.6);
 }
 
-:host-context(body.dark-theme) .menu-content {
-  background: rgba(26, 26, 46, 0.95);
+:host-context(body.dark-theme) .hamburger:hover {
+  background: rgba(30, 41, 59, 0.8);
+}
+
+:host-context(body.dark-theme) .hamburger-line {
+  background-color: #fff;
+}
+
+:host-context(body.dark-theme) .menu-backdrop {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+:host-context(body.dark-theme) .menu-panel {
+  background: rgba(15, 23, 42, 0.95);
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 :host-context(body.dark-theme) .menu-list a {
-  color: #fff !important;
+  color: rgba(255, 255, 255, 0.9);
 }
 
 :host-context(body.dark-theme) .menu-list a:hover {
-  background: rgba(102, 126, 234, 0.2);
-  color: #667eea;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+@media (max-width: 768px) {
+  .header-container {
+    padding-inline: 1rem;
+  }
 }

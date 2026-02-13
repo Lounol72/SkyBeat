@@ -1,22 +1,23 @@
 <header class="header">
   <div class="header-container">
-    <div class="logo">
-      <a routerLink="/">SkyBeat</a>
+    <div class="header-left">
+      <a routerLink="/" class="logo">SkyBeats</a>
     </div>
-    
-    <button class="hamburger" (click)="toggleMenu()" [class.active]="isMenuOpen">
-      <span class="line"></span>
-      <span class="line"></span>
-      <span class="line"></span>
-    </button>
 
-    <nav class="menu" [class.open]="isMenuOpen">
-      <div class="menu-content">
-        <ul class="menu-list">
-          <li><a routerLink="/login" (click)="closeMenu()">Connexion</a></li>
-          <li><a routerLink="/settings" (click)="closeMenu()">Paramètres</a></li>
-        </ul>
-      </div>
-    </nav>
+    <button class="hamburger" type="button" (click)="toggleMenu()" [class.active]="isMenuOpen" aria-label="Menu">
+      <span class="hamburger-line"></span>
+      <span class="hamburger-line"></span>
+      <span class="hamburger-line"></span>
+    </button>
   </div>
+
+  <nav class="menu" [class.open]="isMenuOpen">
+    <div class="menu-backdrop" (click)="closeMenu()"></div>
+    <div class="menu-panel">
+      <ul class="menu-list">
+        <li><a routerLink="/login" (click)="closeMenu()">Connexion</a></li>
+        <li><a routerLink="/settings" (click)="closeMenu()">Paramètres</a></li>
+      </ul>
+    </div>
+  </nav>
 </header>

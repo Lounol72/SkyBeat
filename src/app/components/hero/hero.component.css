@@ -10,11 +10,14 @@
   background: transparent;
 }
 
+/* Brand hero title: use LTR Federal to match app logo */
 .hero__title {
   margin: 0;
   font-size: clamp(3rem, 10vw, 5.5rem);
-  font-weight: 700;
+  /* LTR Federal is a normal-weight display font, keep weight at 400 for correct rendering */
+  font-weight: 400;
   color: #fff;
+  font-family: "ltr-federal", var(--font-title), var(--font-ui) !important;
   letter-spacing: -0.035em;
   line-height: 1.05;
   text-align: center;

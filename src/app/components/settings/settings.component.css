@@ -1,8 +1,8 @@
 .settings-container {
-  min-height: calc(100vh - 70px);
+  min-height: 100vh;
   padding: 2rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  margin-top: 70px;
+  padding-top: calc(60px + 2rem);
+  background: transparent;
 }
 
 .settings-card {

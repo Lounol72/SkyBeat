@@ -21,12 +21,14 @@
   gap: 2rem;
 }
 
+/* Footer app name: also keep LTR Federal for consistency with header logo */
 .footer__logo {
   font-size: 1.125rem;
   font-weight: 600;
   color: #fff;
   text-decoration: none;
   letter-spacing: -0.02em;
+  font-family: "ltr-federal", var(--font-title), var(--font-ui);
 }
 
 .footer__logo:hover {

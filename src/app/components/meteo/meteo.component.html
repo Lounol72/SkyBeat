@@ -1,17 +1,44 @@
-<div>
-    <p>meteo works!</p>
-    <h1>Lieu</h1>
-    <div>
-        <p>Température</p>
-
-        <p *ngIf="temperature !== undefined; else loading">
-        Température : {{ temperature }} °C
-        </p>
-
-        <ng-template #loading>
-        <p>Chargement...</p>
-        </ng-template>
-
-        <img><img>
+<div class="meteo-container">
+  @if (isLoading()) {
+    <div class="meteo-card meteo-card--loading">
+      <div class="loading-spinner"></div>
+      <p class="loading-text">Loading weather data...</p>
     </div>
+  } @else if (error()) {
+    <div class="meteo-card meteo-card--error">
+      <div class="error-icon">⚠️</div>
+      <h2 class="error-title">Unable to load weather</h2>
+      <p class="error-message">{{ error() }}</p>
+      <button type="button" class="retry-button" (click)="retry()">Retry</button>
+    </div>
+  } @else if (weatherData()) {
+    @let data = weatherData()!;
+    @let condition = getWeatherCondition(data.weatherCode);
+    
+    <div class="meteo-card">
+      <h1 class="meteo-location">{{ locationName() }}</h1>
+      
+      <div class="meteo-main">
+        <div class="temperature-display">
+          <span class="temperature-value">{{ data.temperature }}</span>
+          <span class="temperature-unit">°C</span>
+        </div>
+        <div class="weather-condition">
+          <span class="weather-icon">{{ condition.icon }}</span>
+          <span class="weather-name">{{ condition.name }}</span>
+        </div>
+      </div>
+
+      <div class="meteo-details">
+        <div class="detail-item">
+          <span class="detail-label">Humidity</span>
+          <span class="detail-value">{{ data.humidity }}%</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Wind Speed</span>
+          <span class="detail-value">{{ data.windSpeed }} km/h</span>
+        </div>
+      </div>
+    </div>
+  }
 </div>

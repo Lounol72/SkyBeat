@@ -1,5 +1,34 @@
 <section class="hero" aria-label="Section d'accueil SkyBeats">
-  <h1 class="hero__title">SkyBeats</h1>
+  <div class="hero__title-container">
+    <!-- Weather Widget -->
+    @if (weatherData() || isLoadingWeather()) {
+      <div class="hero__weather">
+        @if (isLoadingWeather()) {
+          <div class="weather-widget weather-widget--loading">
+            <div class="weather-spinner"></div>
+          </div>
+        } @else if (weatherData()) {
+          @let data = weatherData()!;
+          @let condition = getWeatherCondition(data.weatherCode);
+          
+          <div class="weather-widget">
+            <div class="weather-widget__location">{{ locationName() }}</div>
+            <div class="weather-widget__main">
+              <span class="weather-widget__icon">{{ condition.icon }}</span>
+              <div class="weather-widget__temp">
+                <span class="weather-widget__temp-value">{{ data.temperature }}</span>
+                <span class="weather-widget__temp-unit">°C</span>
+              </div>
+            </div>
+            <div class="weather-widget__condition">{{ condition.name }}</div>
+          </div>
+        }
+      </div>
+    }
+
+    <h1 class="hero__title">SkyBeats</h1>
+  </div>
+
   <p class="hero__tagline">The harmony between music and weather.</p>
   <a routerLink="/generate" class="hero__cta">Generate your ideal music</a>
 </section>

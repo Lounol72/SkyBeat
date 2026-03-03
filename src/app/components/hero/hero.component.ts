@@ -214,25 +214,19 @@ export class HeroComponent implements OnInit {
   private fetchWeatherData(latitude: number, longitude: number): void {
     this.isLoadingWeather.set(true);
     this.weatherError.set(null);
-
-    const url =
-      'https://api.open-meteo.com/v1/forecast' +
-      `?latitude=${latitude}` +
-      `&longitude=${longitude}` +
-      '&current=temperature_2m,weather_code,relative_humidity_2m,wind_speed_10m' +
-      '&timezone=auto';
+          const url = `http://localhost:3080/weather?latitude=${latitude}&longitude=${longitude}`;
 
     this.http.get<any>(url).subscribe({
       next: (response) => {
-        if (response.current) {
-          const current = response.current;
+        if (response) {
           this.weatherData.set({
-            temperature: current.temperature_2m,
-            weatherCode: current.weather_code,
-            humidity: current.relative_humidity_2m,
-            windSpeed: current.wind_speed_10m,
+            temperature: response.temperature,
+            weatherCode: response.weatherCode,
+            humidity: response.humidity,
+            windSpeed: response.windSpeed,
             location: this.locationName(),
           });
+
           this.isLoadingWeather.set(false);
 
           /**

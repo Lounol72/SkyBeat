@@ -1,8 +1,19 @@
-require("dotenv").config();
+const path = require("path");
+const fs = require("fs");
+
+// Charger .env manuellement (évite les problèmes de cwd avec dotenv v17)
+const envFile = path.join(__dirname, ".env");
+if (fs.existsSync(envFile)) {
+  for (const line of fs.readFileSync(envFile, "utf-8").split("\n")) {
+    const match = line.match(/^([^#=]+)=(.*)$/);
+    if (match) process.env[match[1].trim()] = match[2].trim();
+  }
+}
+console.log("YOUTUBE_API_KEY:", process.env.YOUTUBE_API_KEY ? "loaded" : "MISSING");
+
 const express = require("express");
 const cors = require("cors");
 const axios = require("axios");
-const fs = require("fs");
 
 const app = express();
 const port = 3080;

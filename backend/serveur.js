@@ -63,6 +63,7 @@ app.get("/weather", async (req, res) => {
         windSpeed: current.wind_speed_10m,
       });
 
+      fs.writeFileSync("data/weatherDataCurrent.json",JSON.stringify(current,null,2),"utf-8");
       if(needDailyRefresh){
         fs.writeFileSync("data/weatherData7Days.json",JSON.stringify(daily,null,2),"utf-8");
         needDailyRefresh = false;

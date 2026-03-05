@@ -1,8 +1,19 @@
-require("dotenv").config();
+const path = require("path");
+const fs = require("fs");
+
+// Charger .env manuellement (évite les problèmes de cwd avec dotenv v17)
+const envFile = path.join(__dirname, ".env");
+if (fs.existsSync(envFile)) {
+  for (const line of fs.readFileSync(envFile, "utf-8").split("\n")) {
+    const match = line.match(/^([^#=]+)=(.*)$/);
+    if (match) process.env[match[1].trim()] = match[2].trim();
+  }
+}
+console.log("YOUTUBE_API_KEY:", process.env.YOUTUBE_API_KEY ? "loaded" : "MISSING");
+
 const express = require("express");
 const cors = require("cors");
 const axios = require("axios");
-const fs = require("fs");
 
 const app = express();
 const port = 3080;
@@ -14,20 +25,23 @@ try {
   const rawData = fs.readFileSync("data/weatherData7Days.json", "utf-8");
   cachedWeather = JSON.parse(rawData);
 
-  if (cachedWeather.daily && cachedWeather.daily.time) {
-    const lastForecastDate = cachedWeather.daily.time[6];
+  const lastForecastDate = cachedWeather.time[6];
 
-    const today = new Date().toISOString().split("T")[0];
+  const today = new Date().toISOString().split("T")[0];
 
-    if (lastForecastDate >= today) {
-      needDailyRefresh = false;
-    }
-
-    console.log("Last forecast date:", lastForecastDate);
-    console.log("Today:", today);
-    console.log("Need daily refresh:", needDailyRefresh);
+  if (lastForecastDate >= today) {
+    needDailyRefresh = false;
+    console.log("Forecast data still accurate");
   }
+  else{
+    console.log("Forecast data outdated, fetching new data next request");
+  }
+
+  console.log("Last forecast date:", lastForecastDate);
+  console.log("Today:", today);
+  console.log("Need daily refresh:", needDailyRefresh);
 } catch (error) {
+  console.log(error);
   console.log("No cache file found, daily data will be fetched.");
 }
 

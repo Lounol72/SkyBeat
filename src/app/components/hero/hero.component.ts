@@ -4,6 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { isPlatformBrowser } from '@angular/common';
 import { PLATFORM_ID } from '@angular/core';
+import { YoutubeService } from '../../services/youtube.service';
 
 // Weather condition mapping based on WMO weather codes
 const WEATHER_CONDITIONS: { [key: number]: { name: string; icon: string } } = {
@@ -132,6 +133,7 @@ interface WeatherLocalData {
 export class HeroComponent implements OnInit {
   private http = inject(HttpClient);
   private platformId = inject(PLATFORM_ID);
+  private youtubeService = inject(YoutubeService);
 
   // Weather state
   weatherData = signal<WeatherData | null>(null);
@@ -165,6 +167,7 @@ export class HeroComponent implements OnInit {
             location: data.weather.location
           });
           this.isLoadingWeather.set(false);
+          this.youtubeService.preloadTracks(data.weather.weatherCode);
           console.log("Weather Data loaded from LocalStorage.")
         }
         else{
@@ -228,6 +231,9 @@ export class HeroComponent implements OnInit {
           });
 
           this.isLoadingWeather.set(false);
+
+          // Précharger les tracks YouTube en arrière-plan
+          this.youtubeService.preloadTracks(response.weatherCode);
 
           /**
            *  Saving weather data in LocalStorage

@@ -25,20 +25,23 @@ try {
   const rawData = fs.readFileSync("data/weatherData7Days.json", "utf-8");
   cachedWeather = JSON.parse(rawData);
 
-  if (cachedWeather.daily && cachedWeather.daily.time) {
-    const lastForecastDate = cachedWeather.daily.time[6];
+  const lastForecastDate = cachedWeather.time[6];
 
-    const today = new Date().toISOString().split("T")[0];
+  const today = new Date().toISOString().split("T")[0];
 
-    if (lastForecastDate >= today) {
-      needDailyRefresh = false;
-    }
-
-    console.log("Last forecast date:", lastForecastDate);
-    console.log("Today:", today);
-    console.log("Need daily refresh:", needDailyRefresh);
+  if (lastForecastDate >= today) {
+    needDailyRefresh = false;
+    console.log("Forecast data still accurate");
   }
+  else{
+    console.log("Forecast data outdated, fetching new data next request");
+  }
+
+  console.log("Last forecast date:", lastForecastDate);
+  console.log("Today:", today);
+  console.log("Need daily refresh:", needDailyRefresh);
 } catch (error) {
+  console.log(error);
   console.log("No cache file found, daily data will be fetched.");
 }
 

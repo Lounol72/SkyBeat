@@ -280,3 +280,17 @@ body.dark-theme .hero__cta:hover {
 body.dark-theme .footer {
   border-top-color: rgba(255, 255, 255, 0.05);
 }
+
+/* Generate page - Dark mode */
+body.dark-theme .generate__cover {
+  background: rgba(30, 30, 46, 0.5);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+body.dark-theme .generate__track:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+body.dark-theme .generate__btn--back {
+  background: rgba(255, 255, 255, 0.1);
+}

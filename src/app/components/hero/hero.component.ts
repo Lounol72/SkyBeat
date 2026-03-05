@@ -155,7 +155,7 @@ export class HeroComponent implements OnInit {
       const jsonData = localStorage.getItem("weatherData");
       if(jsonData){
         const data: WeatherLocalData = JSON.parse(jsonData);
-        
+
         const isExpired = Date.now() - data.fetchDate > EXPIRATION_TIME;
 
         if(!isExpired){
@@ -263,5 +263,19 @@ export class HeroComponent implements OnInit {
    */
   getWeatherCondition(code: number): { name: string; icon: string } {
     return WEATHER_CONDITIONS[code] || { name: 'Unknown', icon: '🌤️' };
+  }
+
+  getWeatherColor(): string {
+    const code = this.weatherData()?.weatherCode ?? 0;
+    if (code === 0) return '#ffaa00'; // Soleil = Orange
+    if (code > 0 && code < 50) return '#00d2ff'; // Nuage/Brume = Bleu ciel
+    return '#ff4b2b'; // Pluie/Orage = Rouge/Rose
+  }
+
+  getWeatherTheme(): string {
+  const code = this.weatherData()?.weatherCode ?? 0;
+  if (code === 0) return 'theme-sunny';
+  if (code >= 1 && code < 60) return 'theme-cloudy';
+  return 'theme-rainy';
   }
 }

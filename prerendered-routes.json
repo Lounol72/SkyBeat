@@ -1,0 +1,9 @@
+{
+  "routes": {
+    "/SkyBeat": {},
+    "/SkyBeat/generate": {},
+    "/SkyBeat/login": {},
+    "/SkyBeat/settings": {},
+    "/SkyBeat/signup": {}
+  }
+}

@@ -37,6 +37,8 @@ npm install
 
 ```bash
 npm start
+# Ou
+ng serve --host 0.0.0.0 --port 4200 
 ```
 
 Ouvrez votre navigateur sur `http://localhost:4200/`
@@ -110,7 +112,7 @@ src/app/
 - [ ] Historique des écoutes
 - [ ] Partage de playlists météo
 - [ ] **Création de compte client** avec préférences musicales (Spotify ou YouTube Music)
-- [ ] **Réception quotidienne par email** de la playlist du jour adaptée à la météo
+- [ ] **Réception quotidienne par email** de la playlist du jour adaptée à la météo.
 - [ ] Système de notifications personnalisées
 - [ ] Sauvegarde des playlists favorites
 
@@ -200,3 +202,18 @@ Angular CLI does not come with an end-to-end testing framework by default. You c
 ## Additional Resources
 
 For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+
+## Quotas Complets Toutes APIs (6 Météos/Jour)
+| API | Type Limit | Valeur Gratuite | Usage 6 Playlists/Jour | Usage + Users (100/1k/10k) |
+|-----|------------|-----------------|------------------------|-----------------------------|
+| **YouTube Data v3**   | Unités/jour | 10 000 u | 1200 u (12%) | +100/1k/10k u → 1300/2200/11.2k u |
+| **Spotify**   | Rate limit (req/30s) | ~100-500 prod (demande ext.) | 18 req (0%) | +6/60/600 req/jour (0%) |
+| **Shuffle/Lecture** | - | Illimité client-side | 0 | 0 (JS local)   |
+
+## Coûts Quotidiens Détaillés (0 € Tous)
+
+| Users/Jour | YouTube Unités | Spotify Req (30s) | **€/Jour** |
+|------------|----------------|-------------------|------------|
+| **100**    | 1300 u (13%)   | ~24 (0%)          | **0 €**    |
+| **1000**   |2200 u (22%)    | ~1k/jour (0%)     | **0 €**    |
+| **10k**    |11.2k u         | ~60k/jour         | **0 €**    |

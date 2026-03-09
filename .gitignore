@@ -8,6 +8,7 @@
 
 # Node
 /node_modules
+/backend/node_modules
 npm-debug.log
 yarn-error.log
 
@@ -38,6 +39,12 @@ testem.log
 /typings
 __screenshots__/
 
+# Environment secrets
+.env
+src/environments/environment.prod.ts
+
 # System files
 .DS_Store
 Thumbs.db
+
+angular.json

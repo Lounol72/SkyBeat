@@ -1,8 +1,8 @@
 {
-  "time": "2026-03-05T15:00",
+  "time": "2026-03-09T16:00",
   "interval": 900,
-  "temperature_2m": 17.9,
+  "temperature_2m": 14.6,
   "weather_code": 3,
-  "relative_humidity_2m": 57,
-  "wind_speed_10m": 14.5
+  "relative_humidity_2m": 63,
+  "wind_speed_10m": 10.6
 }

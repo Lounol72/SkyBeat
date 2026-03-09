@@ -4,7 +4,7 @@ const fs = require("fs");
 // Charger .env manuellement (évite les problèmes de cwd avec dotenv v17)
 const envFile = path.join(__dirname, ".env");
 if (fs.existsSync(envFile)) {
-  for (const line of fs.readFileSync(envFile, "utf-8").split("\n")) {
+  for (const line of fs.readFileSync(envFile, "utf-8").split(/\r?\n/)) {
     const match = line.match(/^([^#=]+)=(.*)$/);
     if (match) process.env[match[1].trim()] = match[2].trim();
   }
@@ -260,6 +260,320 @@ app.post("/youtube/playlist", async (req, res) => {
     }
     console.error("Playlist creation error:", error.message);
     res.status(500).json({ error: "Failed to create playlist" });
+  }
+});
+
+// --- Routes Spotify ---
+
+/** Cache global pour le token Spotify (Client Credentials Flow) */
+let spotifyAccessToken = null;
+let spotifyTokenExpiry = 0;
+
+/** Cache des tokens utilisateur (OAuth Authorization Code Flow) */
+const userTokens = new Map();
+
+/**
+ * Obtient un access token Spotify via Client Credentials Flow.
+ * Le token est caché jusqu'à expiration (généralement 1h).
+ */
+async function getSpotifyAccessToken() {
+  if (spotifyAccessToken && Date.now() < spotifyTokenExpiry) {
+    return spotifyAccessToken;
+  }
+
+  const clientId = process.env.SPOTIFY_CLIENT_ID;
+  const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
+
+  if (!clientId || !clientSecret) {
+    throw new Error("Spotify credentials not configured");
+  }
+
+  const authString = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
+
+  const response = await axios.post(
+    "https://accounts.spotify.com/api/token",
+    "grant_type=client_credentials",
+    {
+      headers: {
+        Authorization: `Basic ${authString}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+    }
+  );
+
+  spotifyAccessToken = response.data.access_token;
+  // Le token expire généralement après 3600 secondes (1h)
+  // On retire 5 minutes pour avoir une marge de sécurité
+  spotifyTokenExpiry = Date.now() + (response.data.expires_in - 300) * 1000;
+
+  console.log("Spotify access token obtained, expires in", response.data.expires_in, "seconds");
+  return spotifyAccessToken;
+}
+
+// --- Route de connexion OAuth Spotify ---
+app.get("/spotify/login", (req, res) => {
+  const clientId = process.env.SPOTIFY_CLIENT_ID;
+  const redirectUri = process.env.SPOTIFY_REDIRECT_URI || "http://localhost:3080/callback";
+  
+  const scopes = [
+    "user-read-private",
+    "user-read-email",
+    "playlist-modify-public",
+    "playlist-modify-private"
+  ].join(" ");
+
+  const authUrl = `https://accounts.spotify.com/authorize?` +
+    `client_id=${clientId}&` +
+    `response_type=code&` +
+    `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+    `scope=${encodeURIComponent(scopes)}`;
+
+  res.redirect(authUrl);
+});
+
+// --- Route callback OAuth Spotify ---
+app.get("/callback", async (req, res) => {
+  const { code, error } = req.query;
+
+  if (error) {
+    return res.redirect(`http://localhost:4200/login?error=${error}`);
+  }
+
+  if (!code) {
+    return res.redirect("http://localhost:4200/login?error=no_code");
+  }
+
+  try {
+    const clientId = process.env.SPOTIFY_CLIENT_ID;
+    const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
+    const redirectUri = process.env.SPOTIFY_REDIRECT_URI || "http://localhost:3080/callback";
+
+    const authString = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
+
+    const response = await axios.post(
+      "https://accounts.spotify.com/api/token",
+      new URLSearchParams({
+        grant_type: "authorization_code",
+        code: code,
+        redirect_uri: redirectUri,
+      }),
+      {
+        headers: {
+          Authorization: `Basic ${authString}`,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      }
+    );
+
+    const { access_token, refresh_token, expires_in } = response.data;
+
+    // Stocker le token (dans une vraie app, utiliser une session sécurisée)
+    const tokenId = Math.random().toString(36).substring(7);
+    userTokens.set(tokenId, {
+      accessToken: access_token,
+      refreshToken: refresh_token,
+      expiresAt: Date.now() + expires_in * 1000,
+    });
+
+    console.log("Spotify OAuth successful, token ID:", tokenId);
+
+    // Rediriger vers le frontend avec le token ID
+    res.redirect(`http://localhost:4200/login?spotify_token=${tokenId}&success=true`);
+  } catch (error) {
+    console.error("Spotify OAuth error:", error.response?.data || error.message);
+    res.redirect("http://localhost:4200/login?error=auth_failed");
+  }
+});
+
+// --- Route pour récupérer les infos utilisateur Spotify ---
+app.get("/spotify/me", async (req, res) => {
+  const tokenId = req.query.token_id;
+  
+  if (!tokenId) {
+    return res.status(401).json({ error: "Missing token_id" });
+  }
+
+  const tokenData = userTokens.get(tokenId);
+  if (!tokenData) {
+    return res.status(401).json({ error: "Invalid token_id" });
+  }
+
+  try {
+    const response = await axios.get("https://api.spotify.com/v1/me", {
+      headers: {
+        Authorization: `Bearer ${tokenData.accessToken}`,
+      },
+    });
+
+    res.json(response.data);
+  } catch (error) {
+    console.error("Spotify /me error:", error.response?.data);
+    res.status(500).json({ error: "Failed to get user info" });
+  }
+});
+
+// --- Route recherche Spotify ---
+app.get("/spotify/search", async (req, res) => {
+  try {
+    const { mood } = req.query;
+
+    if (!mood) {
+      return res.status(400).json({ error: "Missing mood parameter" });
+    }
+
+    // Vérifier le cache avant d'appeler l'API
+    const cacheKey = `spotify:${mood}`;
+    const cached = getCachedOrNull(cacheKey);
+    if (cached) {
+      console.log("Spotify search cache hit:", mood);
+      return res.json(cached);
+    }
+
+    // Obtenir le token d'accès Spotify
+    const accessToken = await getSpotifyAccessToken();
+
+    const searchParams = new URLSearchParams({
+      q: String(mood),
+      type: "track",
+    });
+    const url = `https://api.spotify.com/v1/search?${searchParams.toString()}`;
+    console.log("Spotify search URL:", url);
+    const response = await axios.get(url, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    // Transformer la réponse brute en format propre
+    const tracks = response.data.tracks.items.map((item) => ({
+      trackId: item.id,
+      title: item.name,
+      artist: item.artists.map((a) => a.name).join(", "),
+      album: item.album.name,
+      thumbnail:
+        item.album.images[1]?.url ||
+        item.album.images[0]?.url ||
+        "",
+      previewUrl: item.preview_url,
+    }));
+
+    setCache(cacheKey, tracks);
+    console.log(`Spotify search: ${tracks.length} tracks for "${mood}"`);
+    res.json(tracks);
+  } catch (error) {
+    if (error.response) {
+      const status = error.response.status;
+      const spotifyError = error.response.data?.error;
+      console.error("Spotify API error:", status, spotifyError?.message);
+
+      if (status === 401) {
+        // Forcer le renouvellement du token
+        spotifyAccessToken = null;
+        spotifyTokenExpiry = 0;
+        return res.status(401).json({
+          error: "Spotify authentication failed",
+          details: spotifyError?.message,
+        });
+      }
+      if (status === 429) {
+        return res.status(429).json({
+          error: "Spotify rate limit exceeded",
+          details: spotifyError?.message,
+        });
+      }
+      return res
+        .status(status)
+        .json({ error: spotifyError?.message || "Spotify API error" });
+    }
+    console.error("Spotify search error:", error.message);
+    res.status(500).json({ error: "Failed to search Spotify" });
+  }
+});
+
+// --- Route création playlist Spotify ---
+// NOTE : Cette route nécessite un token OAuth 2.0 utilisateur avec les scopes
+// playlist-modify-public et/ou playlist-modify-private.
+// Le token doit être passé dans le header Authorization.
+app.post("/spotify/playlist", async (req, res) => {
+  try {
+    const { title, trackIds } = req.body;
+
+    if (!title || !trackIds || !Array.isArray(trackIds) || !trackIds.length) {
+      return res
+        .status(400)
+        .json({ error: "Missing title or trackIds (non-empty array)" });
+    }
+
+    // Le token OAuth doit être fourni par le client
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      return res.status(401).json({
+        error: "OAuth token required. Send Authorization: Bearer <token>",
+      });
+    }
+
+    const headers = { Authorization: authHeader };
+    const apiBase = "https://api.spotify.com/v1";
+
+    // Récupérer l'ID de l'utilisateur courant
+    const userRes = await axios.get(`${apiBase}/me`, { headers });
+    const userId = userRes.data.id;
+
+    // Étape 1 : Créer la playlist
+    const playlistRes = await axios.post(
+      `${apiBase}/users/${userId}/playlists`,
+      {
+        name: title,
+        description: "Playlist générée par SkyBeat",
+        public: false,
+      },
+      { headers }
+    );
+
+    const playlistId = playlistRes.data.id;
+
+    // Étape 2 : Ajouter les tracks à la playlist
+    // L'API Spotify accepte jusqu'à 100 tracks par requête
+    const trackUris = trackIds.map((id) => `spotify:track:${id}`);
+    const errors = [];
+
+    // Découper en chunks de 100 tracks
+    for (let i = 0; i < trackUris.length; i += 100) {
+      const chunk = trackUris.slice(i, i + 100);
+      try {
+        await axios.post(
+          `${apiBase}/playlists/${playlistId}/tracks`,
+          { uris: chunk },
+          { headers }
+        );
+      } catch (err) {
+        console.error(`Failed to add tracks chunk ${i}-${i + chunk.length}:`, err.message);
+        errors.push(...chunk);
+      }
+    }
+
+    const result = {
+      playlistId,
+      playlistUrl: playlistRes.data.external_urls.spotify,
+    };
+
+    if (errors.length) {
+      result.warnings = `${errors.length} track(s) failed to add`;
+    }
+
+    console.log(`Spotify playlist created: ${playlistId} (${trackIds.length - errors.length}/${trackIds.length} tracks)`);
+    res.json(result);
+  } catch (error) {
+    if (error.response) {
+      const status = error.response.status;
+      const spotifyError = error.response.data?.error;
+      console.error("Spotify playlist error:", status, spotifyError?.message);
+      return res
+        .status(status)
+        .json({ error: spotifyError?.message || "Spotify API error" });
+    }
+    console.error("Spotify playlist creation error:", error.message);
+    res.status(500).json({ error: "Failed to create Spotify playlist" });
   }
 });
 

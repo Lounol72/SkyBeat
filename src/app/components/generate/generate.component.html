@@ -1,0 +1,107 @@
+<div class="generate-container">
+  <header class="header">
+    <a routerLink="/" class="back-button">← Accueil</a>
+    <h1>🎵 Playlist Météo</h1>
+  </header>
+
+  <!-- Section de connexion Spotify -->
+  <div class="spotify-connection">
+    @if (isSpotifyConnected()) {
+      <div class="connected-badge">
+        <span class="status-icon">✓</span>
+        Connecté à Spotify
+      </div>
+    } @else {
+      <div class="connection-required">
+        <p>🎵 Connectez-vous à Spotify pour générer vos playlists personnalisées</p>
+        <button class="spotify-login-btn" (click)="loginToSpotify()">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
+          </svg>
+          Se connecter avec Spotify
+        </button>
+      </div>
+    }
+  </div>
+
+  @if (weatherData()) {
+    <div class="weather-card">
+      <div class="weather-icon">{{ getWeatherIcon(weatherData()!.weatherCode) }}</div>
+      <div class="weather-info">
+        <h2>{{ weatherData()!.temperature }}°C</h2>
+        <p>{{ getWeatherDescription(weatherData()!.weatherCode) }}</p>
+        <p class="location">📍 {{ weatherData()!.location }}</p>
+      </div>
+    </div>
+  }
+
+  <div class="generate-section">
+    <button 
+      class="generate-btn" 
+      (click)="generatePlaylist()" 
+      [disabled]="isLoading() || !weatherData() || !isSpotifyConnected()">
+      @if (isLoading()) {
+        <span class="spinner"></span> Génération...
+      } @else {
+        🎼 Générer ma playlist
+      }
+    </button>
+  </div>
+
+  @if (error()) {
+    <div class="error-message">⚠️ {{ error() }}</div>
+  }
+
+  @if (playlistName() && !isLoading()) {
+    <div class="playlist-header">
+      <h3>{{ mood() }}</h3>
+      <p class="playlist-name">
+        📻 Playlist: 
+        <a [href]="playlistUrl()" target="_blank" class="spotify-playlist-link">
+          {{ playlistName() }}
+        </a>
+      </p>
+      <p class="track-count">{{ playlist().length }} titres</p>
+    </div>
+  }
+
+  <div class="playlist">
+    @for (track of playlist(); track track.id) {
+      <div class="track-card">
+        <div class="track-image">
+          @if (track.album.images.length > 0) {
+            <img [src]="track.album.images[0].url" [alt]="track.name" />
+          } @else {
+            <div class="no-image">🎵</div>
+          }
+        </div>
+        
+        <div class="track-info">
+          <h4 class="track-name">{{ track.name }}</h4>
+          <p class="track-artist">{{ getArtistsNames(track.artists) }}</p>
+          <p class="track-album">{{ track.album.name }}</p>
+        </div>
+
+        <div class="track-actions">
+          <a 
+            [href]="track.external_urls.spotify" 
+            target="_blank" 
+            class="spotify-link"
+            title="Ouvrir dans Spotify">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+    }
+  </div>
+
+  @if (playlist().length === 0 && !isLoading() && !error()) {
+    <div class="empty-state">
+      <div class="empty-icon">🎵</div>
+      <h3>Aucune playlist générée</h3>
+      <p>Cliquez sur le bouton pour générer une playlist adaptée à la météo</p>
+    </div>
+  }
+</div>

@@ -294,3 +294,9 @@ body.dark-theme .generate__track:hover {
 body.dark-theme .generate__btn--back {
   background: rgba(255, 255, 255, 0.1);
 }
+
+.theme-sunny { background: linear-gradient(135deg, #f6d365 0%, #fda085 100%) !important; }
+
+.theme-rainy { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important; }
+
+.theme-cloudy { background: linear-gradient(135deg, #bdc3c7 0%, #2c3e50 100%) !important; }

@@ -10,7 +10,7 @@
         } @else if (weatherData()) {
           @let data = weatherData()!;
           @let condition = getWeatherCondition(data.weatherCode);
-          
+
           <div class="weather-widget">
             <div class="weather-widget__location">{{ locationName() }}</div>
             <div class="weather-widget__main">
@@ -25,8 +25,7 @@
         }
       </div>
     }
-
-    <h1 class="hero__title">SkyBeats</h1>
+    <h1 class="hero__title" [style.color]="getWeatherColor()">SkyBeats</h1>
   </div>
 
   <p class="hero__tagline">The harmony between music and weather.</p>

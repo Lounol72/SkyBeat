@@ -5,6 +5,9 @@ import { PLATFORM_ID } from '@angular/core';
 
 import { YoutubeService } from '../../services/youtube.service';
 import { YouTubeTrack } from '../../models/youtube.models';
+import { SpotifyService } from '../../services/spotify.service';
+import { SpotifyTrack } from '../../models/spotify.models';
+import { Observable } from 'rxjs';
 
 @Component({
   selector: 'app-generate',
@@ -54,20 +57,25 @@ import { YouTubeTrack } from '../../models/youtube.models';
         <!-- 3 premiers tracks -->
         <section class="generate__tracklist">
           <h2 class="generate__tracklist-heading">Aperçu</h2>
-          @for (track of displayedTracks(); track track.videoId; let i = $index) {
+          @for (track of displayedTracks(); track trackId(track); let i = $index) {
             <a
               class="generate__track"
-              [href]="'https://www.youtube.com/watch?v=' + track.videoId"
+              [href]="getTrackUrl(track)"
               target="_blank"
               rel="noopener"
             >
               <span class="generate__track-index">{{ i + 1 }}</span>
               <img
                 [src]="track.thumbnail"
-                [alt]="track.title"
+                [alt]="getTrackTitle(track)"
                 class="generate__track-thumb"
               />
-              <span class="generate__track-title">{{ track.title }}</span>
+              <div class="generate__track-info">
+                <span class="generate__track-title">{{ getTrackTitle(track) }}</span>
+                @if (isSpotifyTrack(track)) {
+                  <span class="generate__track-artist">{{ track.artist }}</span>
+                }
+              </div>
               <svg class="generate__track-play" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                 <path d="M8 5v14l11-7z"/>
               </svg>
@@ -269,8 +277,15 @@ import { YouTubeTrack } from '../../models/youtube.models';
       border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
-    .generate__track-title {
+    .generate__track-info {
       flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+      overflow: hidden;
+    }
+
+    .generate__track-title {
       font-family: var(--font-ui);
       font-size: 0.9rem;
       font-weight: 450;
@@ -278,9 +293,17 @@ import { YouTubeTrack } from '../../models/youtube.models';
       line-height: 1.35;
       overflow: hidden;
       text-overflow: ellipsis;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
+      white-space: nowrap;
+    }
+
+    .generate__track-artist {
+      font-family: var(--font-secondary);
+      font-size: 0.75rem;
+      font-weight: 400;
+      color: rgba(255, 255, 255, 0.5);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .generate__track-play {
@@ -390,16 +413,23 @@ import { YouTubeTrack } from '../../models/youtube.models';
 })
 export class GenerateComponent implements OnInit {
   private youtubeService = inject(YoutubeService);
+  private spotifyService = inject(SpotifyService);
   private platformId = inject(PLATFORM_ID);
 
-  tracks = signal<YouTubeTrack[]>([]);
-  displayedTracks = signal<YouTubeTrack[]>([]);
+  tracks = signal<(YouTubeTrack | SpotifyTrack)[]>([]);
+  displayedTracks = signal<(YouTubeTrack | SpotifyTrack)[]>([]);
   isLoading = signal(true);
   error = signal<string | null>(null);
   moodLabel = signal('Playlist');
+  musicPreference: 'youtube' | 'spotify' = 'youtube';
 
   ngOnInit(): void {
     if (isPlatformBrowser(this.platformId)) {
+      // Lire la préférence musicale depuis localStorage
+      const preference = localStorage.getItem('musicPreference');
+      if (preference === 'spotify' || preference === 'youtube') {
+        this.musicPreference = preference;
+      }
       this.loadTracks();
     }
   }
@@ -408,23 +438,26 @@ export class GenerateComponent implements OnInit {
     this.isLoading.set(true);
     this.error.set(null);
 
+    // Utiliser le service approprié selon la préférence
+    const service = this.musicPreference === 'spotify' ? this.spotifyService : this.youtubeService;
+
     // Formater le mood pour l'affichage (ex: "rainy day chill lo-fi" → "Rainy Day Chill Lo-fi")
-    const mood = this.youtubeService.getCurrentMood();
+    const mood = service.getCurrentMood();
     if (mood) {
       this.moodLabel.set(
         mood.replace(/\b\w/g, (c) => c.toUpperCase())
       );
     }
 
-    this.youtubeService.getPreloadedTracks().subscribe({
-      next: (tracks) => {
+    (service.getPreloadedTracks() as Observable<(YouTubeTrack | SpotifyTrack)[]>).subscribe({
+      next: (tracks: (YouTubeTrack | SpotifyTrack)[]) => {
         this.tracks.set(tracks);
         this.displayedTracks.set(tracks.slice(0, 3));
         this.isLoading.set(false);
 
         // Mettre à jour le mood label si pas encore défini
         if (!mood) {
-          const currentMood = this.youtubeService.getCurrentMood();
+          const currentMood = service.getCurrentMood();
           if (currentMood) {
             this.moodLabel.set(
               currentMood.replace(/\b\w/g, (c) => c.toUpperCase())
@@ -432,10 +465,31 @@ export class GenerateComponent implements OnInit {
           }
         }
       },
-      error: (err) => {
+      error: (err: any) => {
         this.error.set(err.message || 'Une erreur est survenue');
         this.isLoading.set(false);
       },
     });
+  }
+
+  // Helper methods pour gérer les deux types de tracks
+  trackId(track: YouTubeTrack | SpotifyTrack): string {
+    return this.isSpotifyTrack(track) ? track.trackId : track.videoId;
+  }
+
+  isSpotifyTrack(track: YouTubeTrack | SpotifyTrack): track is SpotifyTrack {
+    return 'trackId' in track;
+  }
+
+  getTrackTitle(track: YouTubeTrack | SpotifyTrack): string {
+    return track.title;
+  }
+
+  getTrackUrl(track: YouTubeTrack | SpotifyTrack): string {
+    if (this.isSpotifyTrack(track)) {
+      return `https://open.spotify.com/track/${track.trackId}`;
+    } else {
+      return `https://www.youtube.com/watch?v=${track.videoId}`;
+    }
   }
 }

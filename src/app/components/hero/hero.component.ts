@@ -5,6 +5,7 @@ import { CommonModule } from '@angular/common';
 import { isPlatformBrowser } from '@angular/common';
 import { PLATFORM_ID } from '@angular/core';
 import { YoutubeService } from '../../services/youtube.service';
+import { SpotifyService } from '../../services/spotify.service';
 
 // Weather condition mapping based on WMO weather codes
 const WEATHER_CONDITIONS: { [key: number]: { name: string; icon: string } } = {
@@ -134,6 +135,7 @@ export class HeroComponent implements OnInit {
   private http = inject(HttpClient);
   private platformId = inject(PLATFORM_ID);
   private youtubeService = inject(YoutubeService);
+  private spotifyService = inject(SpotifyService);
 
   // Weather state
   weatherData = signal<WeatherData | null>(null);
@@ -155,7 +157,7 @@ export class HeroComponent implements OnInit {
       const jsonData = localStorage.getItem("weatherData");
       if(jsonData){
         const data: WeatherLocalData = JSON.parse(jsonData);
-        
+
         const isExpired = Date.now() - data.fetchDate > EXPIRATION_TIME;
 
         if(!isExpired){
@@ -167,7 +169,9 @@ export class HeroComponent implements OnInit {
             location: data.weather.location
           });
           this.isLoadingWeather.set(false);
+          // Précharger les tracks YouTube et Spotify en arrière-plan
           this.youtubeService.preloadTracks(data.weather.weatherCode);
+          this.spotifyService.preloadTracks(data.weather.weatherCode);
           console.log("Weather Data loaded from LocalStorage.")
         }
         else{
@@ -232,8 +236,9 @@ export class HeroComponent implements OnInit {
 
           this.isLoadingWeather.set(false);
 
-          // Précharger les tracks YouTube en arrière-plan
+          // Précharger les tracks YouTube et Spotify en arrière-plan
           this.youtubeService.preloadTracks(response.weatherCode);
+          this.spotifyService.preloadTracks(response.weatherCode);
 
           /**
            *  Saving weather data in LocalStorage
@@ -263,5 +268,19 @@ export class HeroComponent implements OnInit {
    */
   getWeatherCondition(code: number): { name: string; icon: string } {
     return WEATHER_CONDITIONS[code] || { name: 'Unknown', icon: '🌤️' };
+  }
+
+  getWeatherColor(): string {
+    const code = this.weatherData()?.weatherCode ?? 0;
+    if (code === 0) return '#ffaa00'; // Soleil = Orange
+    if (code > 0 && code < 50) return '#00d2ff'; // Nuage/Brume = Bleu ciel
+    return '#ff4b2b'; // Pluie/Orage = Rouge/Rose
+  }
+
+  getWeatherTheme(): string {
+  const code = this.weatherData()?.weatherCode ?? 0;
+  if (code === 0) return 'theme-sunny';
+  if (code >= 1 && code < 60) return 'theme-cloudy';
+  return 'theme-rainy';
   }
 }

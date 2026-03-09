@@ -9,7 +9,6 @@ if (fs.existsSync(envFile)) {
     if (match) process.env[match[1].trim()] = match[2].trim();
   }
 }
-console.log("YOUTUBE_API_KEY:", process.env.YOUTUBE_API_KEY ? "loaded" : "MISSING");
 
 const express = require("express");
 const cors = require("cors");

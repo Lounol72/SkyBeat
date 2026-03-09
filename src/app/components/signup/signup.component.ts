@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
 
 @Component({
   selector: 'app-signup',
@@ -17,6 +18,8 @@ export class SignupComponent {
   confirmPassword = '';
   isRegistered = false;
 
+  constructor(private http: HttpClient) {}
+
   onSignup() {
     if (this.password !== this.confirmPassword) {
       alert('Les mots de passe ne correspondent pas !');
@@ -27,5 +30,29 @@ export class SignupComponent {
     console.log('Signup:', this.email);
     // Simulation d'inscription
     this.isRegistered = true;
+
+    const payload = {
+      username: this.username,
+      email: this.email.toUpperCase(),
+      password: this.password
+    };
+
+    this.http.post("http://localhost:3080/accounts/signup", payload)
+      .subscribe({
+        next: (res: any) => {
+
+          console.log("Signup success:", res);
+
+          this.isRegistered = true;
+        },
+
+        error: (err) => {
+
+          console.error("Signup error:", err);
+
+          alert("Erreur lors de l'inscription");
+
+        }
+      });
   }
 }

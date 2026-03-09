@@ -15,6 +15,7 @@ if (fs.existsSync(envFile)) {
 const express = require("express");
 const cors = require("cors");
 const axios = require("axios");
+const bcrypt = require("bcrypt");
 
 const app = express();
 const port = 3080;
@@ -626,6 +627,113 @@ app.post("/spotify/playlist", async (req, res) => {
     }
     console.error("Spotify playlist creation error:", error.message);
     res.status(500).json({ error: "Failed to create Spotify playlist" });
+  }
+});
+
+const USERS_FILE = "data/users.json";
+const SALT_ROUNDS = parseInt(process.env.SALT_ROUNDS);
+
+// --- Fonction utilitaire pour lire les users ---
+function readUsers() {
+  if (!fs.existsSync(USERS_FILE)) {
+    return [];
+  }
+  const data = fs.readFileSync(USERS_FILE, "utf-8");
+  return JSON.parse(data);
+}
+
+// --- Fonction utilitaire pour sauvegarder ---
+function saveUsers(users) {
+  fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2), "utf-8");
+}
+
+// --- ROUTE SIGNUP ---
+app.post("accounts/signup", async (req, res) => {
+  try {
+    console.log("ok");
+    const { username, email, password } = req.body;
+
+    if (!username || !email || !password) {
+      return res.status(400).json({ error: "Missing fields" });
+    }
+
+    let users = readUsers();
+
+    const existingUser = users.find(user => user.email === email);
+
+    if (existingUser) {
+      return res.status(400).json({ error: "User already exists" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+
+    const newUser = {
+      id: Date.now(),
+      username,
+      email,
+      password: hashedPassword
+    };
+
+    users.push(newUser);
+
+    saveUsers(users);
+
+    res.json({
+      message: "User created",
+      user: {
+        id: newUser.id,
+        username,
+        email
+      }
+    });
+
+  } catch (error) {
+
+    console.error("Signup error:", error.message);
+    res.status(500).json({ error: "Signup failed" });
+
+  }
+});
+
+
+
+// --- ROUTE SIGNIN ---
+app.post("accounts/signin", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ error: "Missing fields" });
+    }
+
+    const users = readUsers();
+
+    const user = users.find(u => u.email === email);
+
+    if (!user) {
+      return res.status(400).json({ error: "User not found" });
+    }
+
+    const validPassword = await bcrypt.compare(password, user.password);
+
+    if (!validPassword) {
+      return res.status(401).json({ error: "Invalid password" });
+    }
+
+    res.json({
+      message: "Login successful",
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email
+      }
+    });
+
+  } catch (error) {
+
+    console.error("Signin error:", error.message);
+    res.status(500).json({ error: "Signin failed" });
+
   }
 });
 

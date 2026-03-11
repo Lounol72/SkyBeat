@@ -64,10 +64,30 @@ export class LoginComponent implements OnInit {
   }
 
   onLogin() {
-    // Logique de connexion à implémenter
     console.log('Login:', this.email);
-    // Simulation de connexion
-    this.isLoggedIn = true;
+
+    const payload = {
+      email: this.email.toUpperCase(),
+      password: this.password
+    };
+
+    this.http.post("http://localhost:3080/accounts/signin", payload)
+      .subscribe({
+        next: (res: any) => {
+
+          console.log("Signin success:", res);
+
+          this.isLoggedIn = true;
+        },
+
+        error: (err) => {
+
+          console.error("Signin error:", err);
+          if(err.status === 400) alert("Compte introuvable avec l'email : " + this.email);
+          else if (err.status === 401) alert("Mot de passe invalide !");
+          else alert("Erreur lors de la connexion");
+        }
+      });
   }
 
   onSpotifyLogin() {

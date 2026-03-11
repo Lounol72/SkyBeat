@@ -648,9 +648,8 @@ function saveUsers(users) {
 }
 
 // --- ROUTE SIGNUP ---
-app.post("accounts/signup", async (req, res) => {
+app.post("/accounts/signup", async (req, res) => {
   try {
-    console.log("ok");
     const { username, email, password } = req.body;
 
     if (!username || !email || !password) {
@@ -698,7 +697,7 @@ app.post("accounts/signup", async (req, res) => {
 
 
 // --- ROUTE SIGNIN ---
-app.post("accounts/signin", async (req, res) => {
+app.post("/accounts/signin", async (req, res) => {
   try {
     const { email, password } = req.body;
 

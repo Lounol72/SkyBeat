@@ -28,8 +28,6 @@ export class SignupComponent {
     
     // Logique d'inscription à implémenter
     console.log('Signup:', this.email);
-    // Simulation d'inscription
-    this.isRegistered = true;
 
     const payload = {
       username: this.username,
@@ -49,8 +47,8 @@ export class SignupComponent {
         error: (err) => {
 
           console.error("Signup error:", err);
-
-          alert("Erreur lors de l'inscription");
+          if(err.status === 400) alert("Un compte avec l'email : " + this.email + " existe déjà !");
+          else alert("Erreur lors de l'inscription");
 
         }
       });

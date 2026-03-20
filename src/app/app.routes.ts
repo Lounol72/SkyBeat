@@ -4,6 +4,7 @@ import { GenerateComponent } from './components/generate/generate.component';
 import { LoginComponent } from './components/login/login.component';
 import { SignupComponent } from './components/signup/signup.component';
 import { SettingsComponent } from './components/settings/settings.component';
+import { AboutComponent } from './components/about/about.component';
 
 export const routes: Routes = [
   { path: '', component: LandingComponent },
@@ -11,4 +12,5 @@ export const routes: Routes = [
   { path: 'login', component: LoginComponent },
   { path: 'signup', component: SignupComponent },
   { path: 'settings', component: SettingsComponent },
+  { path: 'about', component: AboutComponent },
 ];

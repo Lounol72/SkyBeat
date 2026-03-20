@@ -1,0 +1,31 @@
+.about-container {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  padding-top: calc(60px + 2rem);
+  background: transparent;
+}
+
+.about-card {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 24px;
+  padding: 3rem;
+  width: 100%;
+  max-width: 600px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  color: white;
+}
+
+h1 { margin: 0 0 0.5rem; font-size: 2.5rem; font-weight: 600; text-align: center; }
+.subtitle { text-align: center; color: rgba(255, 255, 255, 0.75); margin-bottom: 2.5rem; }
+h2 { font-size: 1.5rem; margin-top: 1.5rem; margin-bottom: 0.5rem; color: #fff; }
+p { color: rgba(255, 255, 255, 0.85); line-height: 1.6; }
+.btn-primary { display: block; width: fit-content; margin: 0 auto; padding: 0.875rem 2rem; background: rgba(0,0,0,0.85); color: #fff; border-radius: 980px; text-decoration: none; font-weight: 600; transition: all 0.25s ease; }
+.btn-primary:hover { background: rgba(0,0,0,0.95); transform: scale(1.02); }
+.fade-in-up { animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }

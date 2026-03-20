@@ -293,3 +293,37 @@
     grid-template-columns: repeat(3, 1fr);
   }
 }
+
+/* Animation d'apparition en cascade des textes */
+.fade-in-up{
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeInUp{
+  from{
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to{
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Amélioration du survol des cartes (effet glow) */
+.playlist-card{
+  transition: box-shadow 0.4s ease, transform 0.4s ease, border-color 0.4s ease !important;
+}
+
+.playlist-card:hover{
+  transform: translateY(-4px);
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 12px 40px -10px rgba(255, 255, 255, 0.3), 0 0 20px -5px rgba(156, 52, 154, 0.1) inset !important;
+}
+
+.playlist-card--purple:hover{
+  border-color: rgba(206, 147, 216, 0.4);
+  box-shadow: 0 12px 40px -10px rgba(156, 52, 154, 0.3), 0 0 20px -5px rgba(156, 52, 154, 0.3) inset !important;
+}

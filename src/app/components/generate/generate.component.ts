@@ -50,7 +50,7 @@ import { Observable } from 'rxjs';
           <div class="generate__cover-info">
             <span class="generate__cover-badge">SkyBeat Mix</span>
             <h1 class="generate__cover-title">{{ moodLabel() }}</h1>
-            <p class="generate__cover-count">{{ tracks().length }} titres</p>
+            <p class="generate__cover-count">{{ tracks().length }} {{ musicPreference === 'spotify' ? 'playlists' : 'titres' }}</p>
           </div>
         </section>
 
@@ -448,7 +448,7 @@ export class GenerateComponent implements OnInit {
       this.spotifyService.getPreloadedPlaylists().subscribe({
         next: (playlists: SpotifyPlaylist[]) => {
           this.tracks.set(playlists);
-          this.displayedTracks.set(playlists.slice(0, 3));
+          this.displayedTracks.set(playlists);
           this.isLoading.set(false);
 
           if (!mood) {
@@ -506,7 +506,7 @@ export class GenerateComponent implements OnInit {
 
   getItemUrl(track: YouTubeTrack | SpotifyPlaylist): string {
     if (this.isSpotifyPlaylist(track)) {
-      return track.spotifyUrl;
+      return track.spotifyUrl || `https://open.spotify.com/playlist/${track.playlistId}`;
     } else {
       return `https://www.youtube.com/watch?v=${track.videoId}`;
     }

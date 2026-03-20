@@ -217,7 +217,12 @@ export class SpotifyService {
     } else if (error.status === 401) {
       message = 'Token OAuth manquant ou invalide.';
     } else if (error.status === 429) {
-      message = 'Limite de taux Spotify atteinte. Veuillez réessayer plus tard.';
+      const retryAfterSeconds = Number(error.error?.retryAfterSeconds);
+      if (Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0) {
+        message = `Limite de taux Spotify atteinte. Réessayez dans ${Math.ceil(retryAfterSeconds)} seconde(s).`;
+      } else {
+        message = 'Limite de taux Spotify atteinte. Veuillez réessayer plus tard.';
+      }
     } else {
       message = error.error?.error || `Erreur ${error.status} sur ${method}`;
     }

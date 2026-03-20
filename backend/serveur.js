@@ -130,6 +130,22 @@ function setCache(key, data) {
   saveDiskCache();
 }
 
+function normalizeSpotifyPlaylists(playlists) {
+  if (!Array.isArray(playlists)) return [];
+
+  return playlists
+    .filter((item) => item && item.playlistId)
+    .map((item) => ({
+      ...item,
+      spotifyUrl: item.spotifyUrl || `https://open.spotify.com/playlist/${item.playlistId}`,
+      title: item.title || "Untitled playlist",
+      owner: item.owner || "Spotify",
+      trackCount: Number.isFinite(item.trackCount) ? item.trackCount : 0,
+      description: item.description || "",
+      thumbnail: item.thumbnail || "",
+    }));
+}
+
 // ═══════════════════════════════════════════════════════════
 // ROUTE MÉTÉO — Proxy vers Open-Meteo
 // On proxie pour : (1) éviter les problèmes CORS du client,
@@ -342,6 +358,54 @@ let spotifyTokenExpiry = 0;
 // (ex: Redis + cookies HttpOnly) au lieu d'une Map en mémoire.
 const userTokens = new Map();
 
+const SPOTIFY_MAX_RETRIES = 2;
+const SPOTIFY_MAX_RETRY_DELAY_MS = 10000;
+
+function parseRetryAfterMs(retryAfterHeader) {
+  if (!retryAfterHeader) return null;
+
+  const seconds = Number(retryAfterHeader);
+  if (Number.isFinite(seconds) && seconds >= 0) {
+    return Math.min(seconds * 1000, SPOTIFY_MAX_RETRY_DELAY_MS);
+  }
+
+  const dateMs = Date.parse(retryAfterHeader);
+  if (!Number.isNaN(dateMs)) {
+    return Math.min(Math.max(0, dateMs - Date.now()), SPOTIFY_MAX_RETRY_DELAY_MS);
+  }
+
+  return null;
+}
+
+function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function spotifyRequestWithRetry(requestFn, label) {
+  let attempt = 0;
+
+  while (true) {
+    try {
+      return await requestFn();
+    } catch (error) {
+      const status = error.response?.status;
+      const retryAfterHeader = error.response?.headers?.["retry-after"];
+      const retryAfterMs = parseRetryAfterMs(retryAfterHeader);
+
+      if (status !== 429 || attempt >= SPOTIFY_MAX_RETRIES) {
+        throw error;
+      }
+
+      const backoffMs = Math.min(1000 * 2 ** attempt, SPOTIFY_MAX_RETRY_DELAY_MS);
+      const delayMs = retryAfterMs ?? backoffMs;
+      attempt += 1;
+
+      console.warn(`Spotify rate limited on ${label}. Retry ${attempt}/${SPOTIFY_MAX_RETRIES} in ${delayMs}ms`);
+      await wait(delayMs);
+    }
+  }
+}
+
 async function getSpotifyAccessToken() {
   if (spotifyAccessToken && Date.now() < spotifyTokenExpiry) {
     return spotifyAccessToken;
@@ -357,15 +421,18 @@ async function getSpotifyAccessToken() {
   // Basic auth = base64(clientId:clientSecret), requis par le flow Client Credentials
   const authString = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
 
-  const response = await axios.post(
-    "https://accounts.spotify.com/api/token",
-    "grant_type=client_credentials",
-    {
-      headers: {
-        Authorization: `Basic ${authString}`,
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-    }
+  const response = await spotifyRequestWithRetry(
+    () => axios.post(
+      "https://accounts.spotify.com/api/token",
+      "grant_type=client_credentials",
+      {
+        headers: {
+          Authorization: `Basic ${authString}`,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      }
+    ),
+    "client_credentials_token"
   );
 
   spotifyAccessToken = response.data.access_token;
@@ -502,7 +569,8 @@ app.get("/spotify/search", async (req, res) => {
     const cached = getCachedOrNull(cacheKey);
     if (cached) {
       console.log("Spotify search cache hit:", mood);
-      return res.json(cached);
+      const normalizedCached = normalizeSpotifyPlaylists(cached);
+      return res.json(normalizedCached);
     }
 
     const accessToken = await getSpotifyAccessToken();
@@ -510,31 +578,38 @@ app.get("/spotify/search", async (req, res) => {
     const searchParams = new URLSearchParams({
       q: String(mood),
       type: "playlist",
-      limit: "20"
+      limit: "10"
     });
     const url = `https://api.spotify.com/v1/search?${searchParams.toString()}`;
     console.log("Spotify search URL:", url);
 
-    const response = await axios.get(url, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
+    const response = await spotifyRequestWithRetry(
+      () => axios.get(url, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      }),
+      "search_playlists"
+    );
 
     // On ne garde que les champs utiles pour le frontend
     // (la réponse brute Spotify fait ~50 champs par track) avec les playlists
-    const playlists = response.data.playlists.items.map((item) => ({
+    const playlists = response.data.playlists.items
+      .filter((item) => item && item.id)
+      .map((item) => ({
       playlistId: item.id,
-      title: item.name,
-      owner: item.owner.display_name,
-      trackCount: item.tracks.total,
+      title: item.name || "Untitled playlist",
+      owner: item.owner?.display_name || "Spotify",
+      trackCount: item.tracks?.total ?? 0,
       thumbnail:
         item.images[0]?.url || "",
-      description: item.description,
-      spotifyUrl: item.external_urls.spotify,
-    }));
+      description: item.description || "",
+      spotifyUrl: item.external_urls?.spotify || `https://open.spotify.com/playlist/${item.id}`,
+      }));
 
-    setCache(cacheKey, playlists);
-    console.log(`Spotify search: ${playlists.length} playlists for "${mood}"`);
-    res.json(playlists);
+    const normalizedPlaylists = normalizeSpotifyPlaylists(playlists);
+
+    setCache(cacheKey, normalizedPlaylists);
+    console.log(`Spotify search: ${normalizedPlaylists.length} playlists for "${mood}"`);
+    res.json(normalizedPlaylists);
   } catch (error) {
     if (error.response) {
       const status = error.response.status;
@@ -551,9 +626,11 @@ app.get("/spotify/search", async (req, res) => {
         });
       }
       if (status === 429) {
+        const retryAfterSeconds = Number(error.response.headers?.["retry-after"]);
         return res.status(429).json({
           error: "Spotify rate limit exceeded",
           details: spotifyError?.message,
+          retryAfterSeconds: Number.isFinite(retryAfterSeconds) ? retryAfterSeconds : undefined,
         });
       }
       return res.status(status).json({ error: spotifyError?.message || "Spotify API error" });
@@ -588,13 +665,19 @@ app.post("/spotify/playlist", async (req, res) => {
     const apiBase = "https://api.spotify.com/v1";
 
     // L'ID utilisateur est nécessaire pour l'endpoint de création de playlist
-    const userRes = await axios.get(`${apiBase}/me`, { headers });
+    const userRes = await spotifyRequestWithRetry(
+      () => axios.get(`${apiBase}/me`, { headers }),
+      "get_user_profile"
+    );
     const userId = userRes.data.id;
 
-    const playlistRes = await axios.post(
-      `${apiBase}/users/${userId}/playlists`,
-      { name: title, description: "Playlist générée par SkyBeat", public: false },
-      { headers }
+    const playlistRes = await spotifyRequestWithRetry(
+      () => axios.post(
+        `${apiBase}/users/${userId}/playlists`,
+        { name: title, description: "Playlist générée par SkyBeat", public: false },
+        { headers }
+      ),
+      "create_playlist"
     );
 
     const playlistId = playlistRes.data.id;
@@ -606,7 +689,10 @@ app.post("/spotify/playlist", async (req, res) => {
     for (let i = 0; i < trackUris.length; i += 100) {
       const chunk = trackUris.slice(i, i + 100);
       try {
-        await axios.post(`${apiBase}/playlists/${playlistId}/tracks`, { uris: chunk }, { headers });
+        await spotifyRequestWithRetry(
+          () => axios.post(`${apiBase}/playlists/${playlistId}/tracks`, { uris: chunk }, { headers }),
+          `add_tracks_chunk_${i}_${i + chunk.length}`
+        );
       } catch (err) {
         console.error(`Failed to add tracks chunk ${i}-${i + chunk.length}:`, err.message);
         errors.push(...chunk);
@@ -629,6 +715,14 @@ app.post("/spotify/playlist", async (req, res) => {
       const status = error.response.status;
       const spotifyError = error.response.data?.error;
       console.error("Spotify playlist error:", status, spotifyError?.message);
+      if (status === 429) {
+        const retryAfterSeconds = Number(error.response.headers?.["retry-after"]);
+        return res.status(429).json({
+          error: "Spotify rate limit exceeded",
+          details: spotifyError?.message,
+          retryAfterSeconds: Number.isFinite(retryAfterSeconds) ? retryAfterSeconds : undefined,
+        });
+      }
       return res.status(status).json({ error: spotifyError?.message || "Spotify API error" });
     }
     console.error("Spotify playlist creation error:", error.message);

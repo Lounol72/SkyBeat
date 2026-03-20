@@ -507,7 +507,11 @@ app.get("/spotify/search", async (req, res) => {
 
     const accessToken = await getSpotifyAccessToken();
 
-    const searchParams = new URLSearchParams({ q: String(mood), type: "track" });
+    const searchParams = new URLSearchParams({
+      q: String(mood),
+      type: "playlist",
+      limit: "20"
+    });
     const url = `https://api.spotify.com/v1/search?${searchParams.toString()}`;
     console.log("Spotify search URL:", url);
 
@@ -516,19 +520,21 @@ app.get("/spotify/search", async (req, res) => {
     });
 
     // On ne garde que les champs utiles pour le frontend
-    // (la réponse brute Spotify fait ~50 champs par track)
-    const tracks = response.data.tracks.items.map((item) => ({
-      trackId: item.id,
+    // (la réponse brute Spotify fait ~50 champs par track) avec les playlists
+    const playlists = response.data.playlists.items.map((item) => ({
+      playlistId: item.id,
       title: item.name,
-      artist: item.artists.map((a) => a.name).join(", "),
-      album: item.album.name,
-      thumbnail: item.album.images[1]?.url || item.album.images[0]?.url || "",
-      previewUrl: item.preview_url,
+      owner: item.owner.display_name,
+      trackCount: item.tracks.total,
+      thumbnail:
+        item.images[0]?.url || "",
+      description: item.description,
+      spotifyUrl: item.external_urls.spotify,
     }));
 
-    setCache(cacheKey, tracks);
-    console.log(`Spotify search: ${tracks.length} tracks for "${mood}"`);
-    res.json(tracks);
+    setCache(cacheKey, playlists);
+    console.log(`Spotify search: ${playlists.length} playlists for "${mood}"`);
+    res.json(playlists);
   } catch (error) {
     if (error.response) {
       const status = error.response.status;

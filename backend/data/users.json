@@ -1,8 +1,14 @@
 [
   {
-    "id": 1773235990481,
+    "id": 1773998023781,
     "username": "admin",
-    "email": "ADMIN",
-    "password": "$2b$10$6ODHpoISYDd41A4rTj3kp.KoWt2833KFZYFxJDrIiSUnlgT68XN2y"
+    "email": "ADMIN@ADMIN.ADMIN",
+    "password": "$2b$10$e2sanxNrPU6PsS0LlSwcnOBxwIlbyIwS4UWIR1qxnqzlLJfUD.sBq",
+    "parameters": {
+      "musicPreference": "spotify",
+      "autoPlay": "false",
+      "notifications": "true",
+      "theme": "dark"
+    }
   }
 ]

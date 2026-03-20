@@ -1,6 +1,7 @@
 import { Component, Inject, OnInit, PLATFORM_ID } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { SettingsService } from '../../services/settings';
 
 @Component({
   selector: 'app-settings',
@@ -15,7 +16,7 @@ export class SettingsComponent implements OnInit {
   notifications = true;
   theme: 'light' | 'dark' = 'light';
 
-  constructor(@Inject(PLATFORM_ID) private platformId: Object) {}
+  constructor(@Inject(PLATFORM_ID) private platformId: Object, private settingsService: SettingsService) {}
 
   onSaveSettings() {
     console.log('Settings saved:', {
@@ -24,51 +25,41 @@ export class SettingsComponent implements OnInit {
       notifications: this.notifications,
       theme: this.theme
     });
-    
-    if (isPlatformBrowser(this.platformId)) {
-      localStorage.setItem('musicPreference', this.musicPreference);
-      localStorage.setItem('autoPlay', String(this.autoPlay));
-      localStorage.setItem('notifications', String(this.notifications));
-      localStorage.setItem('theme', this.theme);
-      this.applyTheme(this.theme);
-      alert('Paramètres sauvegardés avec succès !');
-    }
-  }
 
-  applyTheme(theme: 'light' | 'dark') {
-    if (isPlatformBrowser(this.platformId)) {
-      if (theme === 'dark') {
-        document.body.classList.add('dark-theme');
-      } else {
-        document.body.classList.remove('dark-theme');
-      }
+    const parameters = {
+      musicPreference: this.musicPreference,
+      autoPlay: this.autoPlay,
+      notifications: this.notifications,
+      theme: this.theme
     }
+    
+    this.settingsService.setSettings(parameters);
+    alert('Paramètres sauvegardés avec succès !');
   }
 
   ngOnInit() {
-    if (!isPlatformBrowser(this.platformId)) {
-      return;
+    if(this.settingsService.loadFromLocalStorage()){
+      const parameters = this.settingsService.getSettings();
+      const savedMusicPref = parameters.musicPreference;
+      if (savedMusicPref === 'youtube' || savedMusicPref === 'spotify') {
+        this.musicPreference = savedMusicPref;
+      }
+      
+      const savedAutoPlay = parameters.autoPlay;
+      if (savedAutoPlay !== null) {
+        this.autoPlay = savedAutoPlay;
+      }
+      
+      const savedNotifications = parameters.notifications;
+      if (savedNotifications !== null) {
+        this.notifications = savedNotifications;
+      }
+      
+      const savedTheme = parameters.theme;
+      if (savedTheme === 'light' || savedTheme === 'dark') {
+        this.theme = savedTheme;
+      }
     }
 
-    const savedMusicPref = localStorage.getItem('musicPreference');
-    if (savedMusicPref === 'youtube' || savedMusicPref === 'spotify') {
-      this.musicPreference = savedMusicPref;
-    }
-    
-    const savedAutoPlay = localStorage.getItem('autoPlay');
-    if (savedAutoPlay !== null) {
-      this.autoPlay = savedAutoPlay === 'true';
-    }
-    
-    const savedNotifications = localStorage.getItem('notifications');
-    if (savedNotifications !== null) {
-      this.notifications = savedNotifications === 'true';
-    }
-    
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'light' || savedTheme === 'dark') {
-      this.theme = savedTheme;
-      this.applyTheme(this.theme);
-    }
   }
 }

@@ -26,13 +26,21 @@ export class SignupComponent {
       return;
     }
     
-    // Logique d'inscription à implémenter
+    // Logique d'inscription
     console.log('Signup:', this.email);
+
+    const parameters = {
+      musicPreference: localStorage.getItem('musicPreference'),
+      autoPlay: localStorage.getItem('autoPlay'),
+      notifications: localStorage.getItem('notifications'),
+      theme: localStorage.getItem('theme')
+    };
 
     const payload = {
       username: this.username,
       email: this.email.toUpperCase(),
-      password: this.password
+      password: this.password,
+      parameters
     };
 
     this.http.post("http://localhost:3080/accounts/signup", payload)

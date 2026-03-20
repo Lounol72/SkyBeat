@@ -750,9 +750,10 @@ function saveUsers(users) {
 // --- ROUTE SIGNUP ---
 app.post("/accounts/signup", async (req, res) => {
   try {
-    const { username, email, password } = req.body;
+    console.log("ok");
+    const { username, email, password, parameters } = req.body;
 
-    if (!username || !email || !password) {
+    if (!username || !email || !password || !parameters) {
       return res.status(400).json({ error: "Missing fields" });
     }
 
@@ -770,7 +771,8 @@ app.post("/accounts/signup", async (req, res) => {
       id: Date.now(),
       username,
       email,
-      password: hashedPassword
+      password: hashedPassword,
+      parameters
     };
 
     users.push(newUser);
@@ -782,7 +784,8 @@ app.post("/accounts/signup", async (req, res) => {
       user: {
         id: newUser.id,
         username,
-        email
+        email,
+        parameters
       }
     });
 
@@ -824,7 +827,7 @@ app.post("/accounts/signin", async (req, res) => {
       user: {
         id: user.id,
         username: user.username,
-        email: user.email
+        parameters: user.parameters
       }
     });
 

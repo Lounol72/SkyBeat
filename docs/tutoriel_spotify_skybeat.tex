@@ -1,0 +1,284 @@
+\documentclass[a4paper,11pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+
+\geometry{margin=2.5cm}
+
+\title{Tutoriel : Utiliser l'API Spotify avec Angular et Node.js}
+\author{}
+\date{\today}
+
+\definecolor{codegray}{gray}{0.95}
+
+\lstset{
+    backgroundcolor=\color{codegray},
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    frame=single
+}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+\newpage
+
+\section{Introduction}
+
+Ce tutoriel explique comment utiliser l'API Spotify afin de recuperer des playlists a partir d'une recherche utilisateur dans le projet SkyBeat.
+
+L'architecture utilisee est la suivante :
+
+\begin{itemize}
+\item Frontend : Angular
+\item Backend : Node.js avec Express
+\item API externe : Spotify Web API
+\end{itemize}
+
+Le backend sert d'intermediaire entre l'application Angular et l'API Spotify afin de gerer l'authentification, le cache et les requetes.
+
+\section{Prerequis}
+
+Avant de commencer, assurez-vous d'avoir installe :
+
+\begin{itemize}
+\item Node.js
+\item Angular CLI
+\item npm
+\end{itemize}
+
+Creer egalement une application sur le portail developpeur Spotify :
+
+\begin{center}
+\url{https://developer.spotify.com/dashboard}
+\end{center}
+
+Une fois l'application creee, recuperer :
+
+\begin{itemize}
+\item Client ID
+\item Client Secret
+\end{itemize}
+
+Puis configurer les variables dans \texttt{backend/.env} (\texttt{SPOTIFY\_CLIENT\_ID}, \texttt{SPOTIFY\_CLIENT\_SECRET}, \texttt{SPOTIFY\_REDIRECT\_URI}).
+
+\section{Architecture du projet}
+
+Structure recommandee :
+
+\begin{lstlisting}
+SkyBeat/
+    backend/
+        serveur.js
+        data/
+            playlistCache.json
+            users.json
+    src/
+        environments/
+            environment.ts
+        app/
+            services/
+                spotify.service.ts
+\end{lstlisting}
+
+\section{Backend Node.js}
+
+Installer les dependances :
+
+\begin{lstlisting}
+cd backend
+npm install
+\end{lstlisting}
+
+\subsection{Serveur Express}
+
+Le fichier utilise dans SkyBeat est \texttt{backend/serveur.js}.
+
+\begin{lstlisting}
+app.get("/spotify/search", async (req, res) => {
+  try {
+    const { mood } = req.query;
+
+    if (!mood) {
+      return res.status(400).json({ error: "Missing mood parameter" });
+    }
+
+    const cacheKey = `spotify:${mood}`;
+    const cached = getCachedOrNull(cacheKey);
+    if (cached) {
+      const normalizedCached = normalizeSpotifyPlaylists(cached);
+      return res.json(normalizedCached);
+    }
+
+    const accessToken = await getSpotifyAccessToken();
+
+    const response = await spotifyRequestWithRetry(
+      () => axios.get("https://api.spotify.com/v1/search", {
+        headers: { Authorization: `Bearer ${accessToken}` },
+        params: { q: String(mood), type: "playlist", limit: "10" }
+      }),
+      "search_playlists"
+    );
+
+    const playlists = response.data.playlists.items
+      .filter((item) => item && item.id)
+      .map((item) => ({
+        playlistId: item.id,
+        title: item.name || "Untitled playlist",
+        owner: item.owner?.display_name || "Spotify",
+        trackCount: item.tracks?.total ?? 0,
+        thumbnail: item.images[0]?.url || "",
+        description: item.description || "",
+        spotifyUrl: item.external_urls?.spotify || `https://open.spotify.com/playlist/${item.id}`,
+      }));
+
+    const normalizedPlaylists = normalizeSpotifyPlaylists(playlists);
+    setCache(cacheKey, normalizedPlaylists);
+    res.json(normalizedPlaylists);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to search Spotify" });
+  }
+});
+\end{lstlisting}
+
+\subsection{Service Spotify}
+
+La gestion du token Client Credentials est aussi faite dans \texttt{backend/serveur.js}.
+
+\begin{lstlisting}
+async function getSpotifyAccessToken() {
+  if (spotifyAccessToken && Date.now() < spotifyTokenExpiry) {
+    return spotifyAccessToken;
+  }
+
+  const clientId = process.env.SPOTIFY_CLIENT_ID;
+  const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
+
+  const authString = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
+
+  const response = await spotifyRequestWithRetry(
+    () => axios.post(
+      "https://accounts.spotify.com/api/token",
+      "grant_type=client_credentials",
+      {
+        headers: {
+          Authorization: `Basic ${authString}`,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      }
+    ),
+    "client_credentials_token"
+  );
+
+  spotifyAccessToken = response.data.access_token;
+  spotifyTokenExpiry = Date.now() + (response.data.expires_in - 300) * 1000;
+
+  return spotifyAccessToken;
+}
+\end{lstlisting}
+
+\section{Frontend Angular}
+
+Dans SkyBeat, le frontend Angular existe deja dans le dossier racine \texttt{src/}.
+
+Lancer l'application :
+
+\begin{lstlisting}
+npm install
+npm start
+\end{lstlisting}
+
+\subsection{Service Angular}
+
+Le service utilise est \texttt{src/app/services/spotify.service.ts}.
+
+\begin{lstlisting}
+@Injectable({ providedIn: 'root' })
+export class SpotifyService {
+  private readonly http = inject(HttpClient);
+  private readonly apiUrl = environment.backendUrl;
+
+  searchPlaylists(mood: string): Observable<SpotifyPlaylist[]> {
+    return this.http
+      .get<SpotifyPlaylist[]>(`${this.apiUrl}/spotify/search`, {
+        params: { mood },
+      });
+  }
+
+  createPlaylist(title: string, trackIds: string[], oauthToken: string): Observable<SpotifyPlaylistResponse> {
+    return this.http.post<SpotifyPlaylistResponse>(
+      `${this.apiUrl}/spotify/playlist`,
+      { title, trackIds },
+      { headers: { Authorization: `Bearer ${oauthToken}` } }
+    );
+  }
+}
+\end{lstlisting}
+
+\subsection{Composant de recherche}
+
+Exemple d'appel depuis un composant Angular :
+
+\begin{lstlisting}
+import { Component } from '@angular/core';
+import { SpotifyService } from '../services/spotify.service';
+
+@Component({
+  selector: 'app-generate',
+  templateUrl: './generate.component.html'
+})
+export class GenerateComponent {
+  mood = 'chill vibes music';
+  playlists: any[] = [];
+
+  constructor(private spotifyService: SpotifyService) {}
+
+  search() {
+    this.spotifyService.searchPlaylists(this.mood)
+      .subscribe((data: any[]) => {
+        this.playlists = data;
+      });
+  }
+}
+\end{lstlisting}
+
+\subsection{Template HTML}
+
+\begin{lstlisting}
+<input [(ngModel)]="mood" placeholder="Mood Spotify (ex: chill, dance, jazz)">
+<button (click)="search()">Search</button>
+
+<ul>
+  <li *ngFor="let playlist of playlists">
+    {{ playlist.title }} - {{ playlist.owner }}
+  </li>
+</ul>
+\end{lstlisting}
+
+\section{Resultat}
+
+L'utilisateur peut :
+
+\begin{itemize}
+\item saisir un mood musical
+\item lancer une recherche via Angular
+\item recuperer des playlists Spotify depuis le backend Express
+\end{itemize}
+
+\section{Ameliorations possibles}
+
+\begin{itemize}
+\item Ajouter la persistance des tokens utilisateur (Redis / session store)
+\item Ajouter un refresh token flow complet pour l'OAuth Spotify
+\item Ajouter une pagination cote frontend
+\item Ajouter une vue detail d'une playlist (image, nombre de titres, description)
+\end{itemize}
+
+\end{document}

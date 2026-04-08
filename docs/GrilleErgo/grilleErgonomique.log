@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.22 (TeX Live 2022/dev/Debian) (preloaded format=pdflatex 2025.11.18)  4 FEB 2026 10:32
+This is pdfTeX, Version 3.141592653-2.6-1.40.22 (TeX Live 2022/dev/Debian) (preloaded format=pdflatex 2026.3.5)  8 APR 2026 12:50
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -200,30 +200,27 @@ ce $\U/msa/m/n/10.95 ^^C$  \T1/cmr/m/n/10.95 Institutionnel $\U/msa/m/n/10.95 ^
 ^C$
  []
 
-! I can't write on file `grilleErgonomique.pdf'.
-(Press Enter to retry, or Control-D to exit; default file extension is `.pdf')
-Please type another file name for output: grilleErgonomique.pdf
 [1
 
 {/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}] [2]
 (./grilleErgonomique.aux) ) 
 Here is how much of TeX's memory you used:
  2935 strings out of 480247
- 45155 string characters out of 5896150
- 372857 words of memory out of 5000000
+ 45155 string characters out of 5896152
+ 373857 words of memory out of 5000000
  20888 multiletter control sequences out of 15000+600000
  478542 words of font info for 52 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
- 55i,9n,62p,175b,191s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 55i,11n,62p,178b,191s stack positions out of 5000i,500n,10000p,200000b,80000s
  </home/nathan/.texlive2021/texmf-var/fonts/pk/ljfou
 r/jknappen/ec/ecbx1095.600pk> </home/nathan/.texlive2021/texmf-var/fonts/pk/ljf
 our/jknappen/ec/ecrm1095.600pk> </home/nathan/.texlive2021/texmf-var/fonts/pk/l
 jfour/jknappen/ec/ecbx1200.600pk> </home/nathan/.texlive2021/texmf-var/fonts/pk
 /ljfour/jknappen/ec/ecbx1440.600pk></usr/share/texlive/texmf-dist/fonts/type1/p
 ublic/amsfonts/symbols/msam10.pfb>
-Output written on grilleErgonomique.pdf (2 pages, 52797 bytes).
+Output written on grilleErgonomique.pdf (2 pages, 55014 bytes).
 PDF statistics:
- 160 PDF objects out of 1000 (max. 8388607)
+ 166 PDF objects out of 1000 (max. 8388607)
  25 compressed objects within 1 object stream
  0 named destinations out of 1000 (max. 500000)
  1 words of extra memory for PDF output out of 10000 (max. 10000000)

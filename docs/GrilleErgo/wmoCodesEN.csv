@@ -1,0 +1,101 @@
+code,description
+00,Cloud development not observed or not observable
+01,Clouds generally dissolving or becoming less developed
+02,State of sky on the whole unchanged
+03,Clouds generally forming or developing
+04,Visibility reduced by smoke
+05,Haze
+06,Widespread dust in suspension
+07,Dust or sand raised by wind
+08,Well-developed dust or sand whirls
+09,Duststorm or sandstorm within sight, weak
+10,Mist
+11,Patches of shallow fog or ice fog
+12,Continuous shallow fog or ice fog
+13,Lightning visible no thunder heard
+14,Precipitation within sight not reaching the ground
+15,Precipitation within sight reaching the ground more than 5 km away
+16,Precipitation within sight reaching the ground nearby
+17,Thunderstorm but no precipitation
+18,Squalls
+19,Funnel cloud tornado or waterspout
+20,Drizzle or snow grains past hour
+21,Rain past hour
+22,Snow past hour
+23,Rain and snow or ice pellets past hour
+24,Freezing rain or freezing drizzle past hour
+25,Shower(s) past hour
+26,Ice pellets past hour
+27,Hail past hour
+28,Fog or ice fog past hour
+29,Thunderstorm past hour
+30,Slight or moderate duststorm or sandstorm
+31,Duststorm or sandstorm moderate
+32,Duststorm or sandstorm severe
+33,Duststorm or sandstorm decreasing
+34,Duststorm or sandstorm no change
+35,Duststorm or sandstorm increasing
+36,Slight drifting snow
+37,Moderate drifting snow
+38,Heavy drifting snow
+39,Heavy drifting snow with storm
+40,Fog at a distance
+41,Fog in patches
+42,Fog thinning
+43,Fog thinning sky visible
+44,Fog thinning sky invisible
+45,Fog
+46,Freezing fog
+47,Dense fog
+48,Dense freezing fog
+49,Fog depositing rime
+50,Drizzle slight intermittent
+51,Drizzle slight continuous
+52,Drizzle moderate intermittent
+53,Drizzle moderate continuous
+54,Drizzle heavy intermittent
+55,Drizzle heavy continuous
+56,Freezing drizzle slight
+57,Freezing drizzle moderate or heavy
+58,Drizzle and rain slight
+59,Drizzle and rain moderate or heavy
+60,Rain slight intermittent
+61,Rain slight continuous
+62,Rain moderate intermittent
+63,Rain moderate continuous
+64,Rain heavy intermittent
+65,Rain heavy continuous
+66,Freezing rain slight
+67,Freezing rain moderate or heavy
+68,Rain and snow slight
+69,Rain and snow moderate or heavy
+70,Snow slight intermittent
+71,Snow slight continuous
+72,Snow moderate intermittent
+73,Snow moderate continuous
+74,Snow heavy intermittent
+75,Snow heavy continuous
+76,Diamond dust
+77,Snow grains
+78,Snow and rain slight
+79,Snow and rain moderate or heavy
+80,Rain showers slight
+81,Rain showers moderate
+82,Rain showers violent
+83,Rain and snow showers
+84,Snow showers
+85,Snow showers slight
+86,Snow showers heavy
+87,Showers of ice pellets
+88,Hail showers slight
+89,Hail showers heavy
+90,Thunderstorm without precipitation
+91,Thunderstorm with slight rain
+92,Thunderstorm with moderate rain
+93,Thunderstorm with heavy rain
+94,Thunderstorm with hail
+95,Thunderstorm
+96,Thunderstorm with slight hail
+97,Thunderstorm with heavy hail
+98,Thunderstorm with duststorm
+99,Severe thunderstorm

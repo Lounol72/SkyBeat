@@ -32,9 +32,9 @@
 
 \section{Introduction}
 
-Ce tutoriel explique comment utiliser l'API Spotify afin de recuperer des playlists a partir d'une recherche utilisateur dans le projet SkyBeat.
+Ce tutoriel explique comment utiliser l'API Spotify afin de récuperer des playlists à partir d'une recherche utilisateur.
 
-L'architecture utilisee est la suivante :
+L'architecture utilisée est la suivante :
 
 \begin{itemize}
 \item Frontend : Angular
@@ -42,11 +42,11 @@ L'architecture utilisee est la suivante :
 \item API externe : Spotify Web API
 \end{itemize}
 
-Le backend sert d'intermediaire entre l'application Angular et l'API Spotify afin de gerer l'authentification, le cache et les requetes.
+Le backend sert d'intermediaire entre l'application Angular et l'API Spotify afin de gérer l'authentification, le cache et les requêtes.
 
 \section{Prerequis}
 
-Avant de commencer, assurez-vous d'avoir installe :
+Avant de commencer, assurez-vous d'avoir installé :
 
 \begin{itemize}
 \item Node.js
@@ -54,7 +54,7 @@ Avant de commencer, assurez-vous d'avoir installe :
 \item npm
 \end{itemize}
 
-Creer egalement une application sur le portail developpeur Spotify :
+Créer egalement une application sur le portail developpeur Spotify :
 
 \begin{center}
 \url{https://developer.spotify.com/dashboard}
@@ -71,7 +71,7 @@ Puis configurer les variables dans \texttt{backend/.env} (\texttt{SPOTIFY\_CLIEN
 
 \section{Architecture du projet}
 
-Structure recommandee :
+Structure recommandée :
 
 \begin{lstlisting}
 SkyBeat/
@@ -90,7 +90,7 @@ SkyBeat/
 
 \section{Backend Node.js}
 
-Installer les dependances :
+Installer les dépendances :
 
 \begin{lstlisting}
 cd backend
@@ -99,9 +99,16 @@ npm install
 
 \subsection{Serveur Express}
 
-Le fichier utilise dans SkyBeat est \texttt{backend/serveur.js}.
+Le fichier lançant le serveur backend est \texttt{backend/serveur.js}.
 
 \begin{lstlisting}
+const express = require("express");
+const cors = require("cors");
+const axios = require("axios");
+
+const app = express();
+const port = 3080;
+
 app.get("/spotify/search", async (req, res) => {
   try {
     const { mood } = req.query;
@@ -146,11 +153,15 @@ app.get("/spotify/search", async (req, res) => {
     res.status(500).json({ error: "Failed to search Spotify" });
   }
 });
+
+app.listen(port, () => {
+  console.log("Server is running on port " + port);
+});
 \end{lstlisting}
 
 \subsection{Service Spotify}
 
-La gestion du token Client Credentials est aussi faite dans \texttt{backend/serveur.js}.
+La gestion du token Client Credentials est aussi faîte dans \texttt{backend/serveur.js}.
 
 \begin{lstlisting}
 async function getSpotifyAccessToken() {
@@ -186,18 +197,16 @@ async function getSpotifyAccessToken() {
 
 \section{Frontend Angular}
 
-Dans SkyBeat, le frontend Angular existe deja dans le dossier racine \texttt{src/}.
-
 Lancer l'application :
 
 \begin{lstlisting}
 npm install
-npm start
+ng serve --open
 \end{lstlisting}
 
 \subsection{Service Angular}
 
-Le service utilise est \texttt{src/app/services/spotify.service.ts}.
+Le service utilisé est \texttt{src/app/services/spotify.service.ts}.
 
 \begin{lstlisting}
 @Injectable({ providedIn: 'root' })
@@ -267,18 +276,8 @@ export class GenerateComponent {
 L'utilisateur peut :
 
 \begin{itemize}
-\item saisir un mood musical
 \item lancer une recherche via Angular
 \item recuperer des playlists Spotify depuis le backend Express
-\end{itemize}
-
-\section{Ameliorations possibles}
-
-\begin{itemize}
-\item Ajouter la persistance des tokens utilisateur (Redis / session store)
-\item Ajouter un refresh token flow complet pour l'OAuth Spotify
-\item Ajouter une pagination cote frontend
-\item Ajouter une vue detail d'une playlist (image, nombre de titres, description)
 \end{itemize}
 
 \end{document}

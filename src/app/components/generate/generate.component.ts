@@ -6,7 +6,7 @@ import { PLATFORM_ID } from '@angular/core';
 import { YoutubeService } from '../../services/youtube.service';
 import { YouTubeTrack } from '../../models/youtube.models';
 import { SpotifyService } from '../../services/spotify.service';
-import { SpotifyTrack } from '../../models/spotify.models';
+import { SpotifyPlaylist } from '../../models/spotify.models';
 import { Observable } from 'rxjs';
 
 @Component({
@@ -50,7 +50,7 @@ import { Observable } from 'rxjs';
           <div class="generate__cover-info">
             <span class="generate__cover-badge">SkyBeat Mix</span>
             <h1 class="generate__cover-title">{{ moodLabel() }}</h1>
-            <p class="generate__cover-count">{{ tracks().length }} titres</p>
+            <p class="generate__cover-count">{{ tracks().length }} {{ musicPreference === 'spotify' ? 'playlists' : 'titres' }}</p>
           </div>
         </section>
 
@@ -60,20 +60,20 @@ import { Observable } from 'rxjs';
           @for (track of displayedTracks(); track trackId(track); let i = $index) {
             <a
               class="generate__track"
-              [href]="getTrackUrl(track)"
+              [href]="getItemUrl(track)"
               target="_blank"
               rel="noopener"
             >
               <span class="generate__track-index">{{ i + 1 }}</span>
               <img
                 [src]="track.thumbnail"
-                [alt]="getTrackTitle(track)"
+                [alt]="getItemTitle(track)"
                 class="generate__track-thumb"
               />
               <div class="generate__track-info">
-                <span class="generate__track-title">{{ getTrackTitle(track) }}</span>
-                @if (isSpotifyTrack(track)) {
-                  <span class="generate__track-artist">{{ track.artist }}</span>
+                <span class="generate__track-title">{{ getItemTitle(track) }}</span>
+                @if (isSpotifyPlaylist(track)) {
+                  <span class="generate__track-artist">Par {{ track.owner }} • {{ track.trackCount }} titres</span>
                 }
               </div>
               <svg class="generate__track-play" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -416,8 +416,8 @@ export class GenerateComponent implements OnInit {
   private spotifyService = inject(SpotifyService);
   private platformId = inject(PLATFORM_ID);
 
-  tracks = signal<(YouTubeTrack | SpotifyTrack)[]>([]);
-  displayedTracks = signal<(YouTubeTrack | SpotifyTrack)[]>([]);
+  tracks = signal<(YouTubeTrack | SpotifyPlaylist)[]>([]);
+  displayedTracks = signal<(YouTubeTrack | SpotifyPlaylist)[]>([]);
   isLoading = signal(true);
   error = signal<string | null>(null);
   moodLabel = signal('Playlist');
@@ -438,56 +438,75 @@ export class GenerateComponent implements OnInit {
     this.isLoading.set(true);
     this.error.set(null);
 
-    // Utiliser le service approprié selon la préférence
-    const service = this.musicPreference === 'spotify' ? this.spotifyService : this.youtubeService;
+    if (this.musicPreference === 'spotify') {
+      // Spotify : charger les playlists
+      const mood = this.spotifyService.getCurrentMood();
+      if (mood) {
+        this.moodLabel.set(mood.replace(/\b\w/g, (c) => c.toUpperCase()));
+      }
 
-    // Formater le mood pour l'affichage (ex: "rainy day chill lo-fi" → "Rainy Day Chill Lo-fi")
-    const mood = service.getCurrentMood();
-    if (mood) {
-      this.moodLabel.set(
-        mood.replace(/\b\w/g, (c) => c.toUpperCase())
-      );
-    }
+      this.spotifyService.getPreloadedPlaylists().subscribe({
+        next: (playlists: SpotifyPlaylist[]) => {
+          this.tracks.set(playlists);
+          this.displayedTracks.set(playlists);
+          this.isLoading.set(false);
 
-    (service.getPreloadedTracks() as Observable<(YouTubeTrack | SpotifyTrack)[]>).subscribe({
-      next: (tracks: (YouTubeTrack | SpotifyTrack)[]) => {
-        this.tracks.set(tracks);
-        this.displayedTracks.set(tracks.slice(0, 3));
-        this.isLoading.set(false);
-
-        // Mettre à jour le mood label si pas encore défini
-        if (!mood) {
-          const currentMood = service.getCurrentMood();
-          if (currentMood) {
-            this.moodLabel.set(
-              currentMood.replace(/\b\w/g, (c) => c.toUpperCase())
-            );
+          if (!mood) {
+            const currentMood = this.spotifyService.getCurrentMood();
+            if (currentMood) {
+              this.moodLabel.set(currentMood.replace(/\b\w/g, (c) => c.toUpperCase()));
+            }
           }
-        }
-      },
-      error: (err: any) => {
-        this.error.set(err.message || 'Une erreur est survenue');
-        this.isLoading.set(false);
-      },
-    });
+        },
+        error: (err: any) => {
+          this.error.set(err.message || 'Une erreur est survenue');
+          this.isLoading.set(false);
+        },
+      });
+    } else {
+      // YouTube : charger les tracks
+      const mood = this.youtubeService.getCurrentMood();
+      if (mood) {
+        this.moodLabel.set(mood.replace(/\b\w/g, (c) => c.toUpperCase()));
+      }
+
+      this.youtubeService.getPreloadedTracks().subscribe({
+        next: (tracks: YouTubeTrack[]) => {
+          this.tracks.set(tracks);
+          this.displayedTracks.set(tracks.slice(0, 3));
+          this.isLoading.set(false);
+
+          if (!mood) {
+            const currentMood = this.youtubeService.getCurrentMood();
+            if (currentMood) {
+              this.moodLabel.set(currentMood.replace(/\b\w/g, (c) => c.toUpperCase()));
+            }
+          }
+        },
+        error: (err: any) => {
+          this.error.set(err.message || 'Une erreur est survenue');
+          this.isLoading.set(false);
+        },
+      });
+    }
   }
 
-  // Helper methods pour gérer les deux types de tracks
-  trackId(track: YouTubeTrack | SpotifyTrack): string {
-    return this.isSpotifyTrack(track) ? track.trackId : track.videoId;
+  // Helper methods pour gérer les deux types (tracks YouTube et playlists Spotify)
+  trackId(track: YouTubeTrack | SpotifyPlaylist): string {
+    return this.isSpotifyPlaylist(track) ? track.playlistId : track.videoId;
   }
 
-  isSpotifyTrack(track: YouTubeTrack | SpotifyTrack): track is SpotifyTrack {
-    return 'trackId' in track;
+  isSpotifyPlaylist(track: YouTubeTrack | SpotifyPlaylist): track is SpotifyPlaylist {
+    return 'playlistId' in track;
   }
 
-  getTrackTitle(track: YouTubeTrack | SpotifyTrack): string {
+  getItemTitle(track: YouTubeTrack | SpotifyPlaylist): string {
     return track.title;
   }
 
-  getTrackUrl(track: YouTubeTrack | SpotifyTrack): string {
-    if (this.isSpotifyTrack(track)) {
-      return `https://open.spotify.com/track/${track.trackId}`;
+  getItemUrl(track: YouTubeTrack | SpotifyPlaylist): string {
+    if (this.isSpotifyPlaylist(track)) {
+      return track.spotifyUrl || `https://open.spotify.com/playlist/${track.playlistId}`;
     } else {
       return `https://www.youtube.com/watch?v=${track.videoId}`;
     }

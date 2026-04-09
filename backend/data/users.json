@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1773998023781,
+    "username": "admin",
+    "email": "ADMIN@ADMIN.ADMIN",
+    "password": "$2b$10$e2sanxNrPU6PsS0LlSwcnOBxwIlbyIwS4UWIR1qxnqzlLJfUD.sBq",
+    "parameters": {
+      "musicPreference": "spotify",
+      "autoPlay": "false",
+      "notifications": "true",
+      "theme": "dark"
+    }
+  },
+  {
+    "id": 1775666164268,
+    "username": "Gartin",
+    "email": "GARTIN.DUBOIS@EMAIL.TEST",
+    "password": "$2b$10$JE4h/Z31JnXhALsgqn7cc.dJ9j2zmhdEfTfE06QP57L9bi.D5tEIS",
+    "parameters": {
+      "musicPreference": "spotify",
+      "autoPlay": "false",
+      "notifications": "false",
+      "theme": "light"
+    }
+  }
+]

@@ -4,7 +4,7 @@ import { Observable, of, throwError, ReplaySubject } from 'rxjs';
 import { tap, catchError, take } from 'rxjs/operators';
 
 import { environment } from '../../environments/environment';
-import { SpotifyTrack, SpotifyPlaylistResponse } from '../models/spotify.models';
+import { SpotifyPlaylist, SpotifyPlaylistResponse } from '../models/spotify.models';
 
 /**
  * Service Spotify pour SkyBeat.
@@ -20,7 +20,10 @@ export class SpotifyService {
   private readonly apiUrl = environment.backendUrl;
 
   /** Cache client pour éviter les appels réseau répétés (double couche avec le cache serveur 12h) */
-  private readonly searchCache = new Map<string, SpotifyTrack[]>();
+  private readonly searchCache = new Map<string, SpotifyPlaylist[]>();
+
+  /** TTL du cache localStorage (12h, aligné sur le cache serveur) */
+  private readonly LOCAL_CACHE_TTL_MS = 12 * 60 * 60 * 1000;
 
   /** Mood actuellement préchargé (stocké pour que /generate puisse le récupérer) */
   private preloadedMood: string | null = null;
@@ -30,7 +33,7 @@ export class SpotifyService {
    * ReplaySubject(1) permet aux souscripteurs tardifs (page /generate) de recevoir
    * la dernière valeur même si le preload est déjà terminé.
    */
-  private preloadResult$ = new ReplaySubject<SpotifyTrack[]>(1);
+  private preloadResult$ = new ReplaySubject<SpotifyPlaylist[]>(1);
   private preloadInProgress = false;
 
   // --- Mapping météo WMO → mood Spotify ---
@@ -60,11 +63,11 @@ export class SpotifyService {
   }
 
   /**
-   * Précharge les tracks en arrière-plan depuis la landing page.
+   * Précharge les playlists en arrière-plan depuis la landing page.
    * Appelé par HeroComponent dès que la météo est disponible.
    * Ne fait rien si un preload est déjà en cours pour le même mood.
    */
-  preloadTracks(weatherCode: number): void {
+  preloadPlaylists(weatherCode: number): void {
     const mood = this.getPlaylistMood(weatherCode);
 
     // Pas de double preload pour le même mood
@@ -75,27 +78,27 @@ export class SpotifyService {
     this.preloadedMood = mood;
     this.preloadInProgress = true;
 
-    this.searchTracks(mood).pipe(take(1)).subscribe({
-      next: (tracks) => {
+    this.searchPlaylists(mood).pipe(take(1)).subscribe({
+      next: (playlists) => {
         this.preloadInProgress = false;
-        this.preloadResult$.next(tracks);
+        this.preloadResult$.next(playlists);
       },
       error: (err) => {
         this.preloadInProgress = false;
         this.preloadResult$.error(err);
         // Recréer le subject pour que les prochains appels fonctionnent
-        this.preloadResult$ = new ReplaySubject<SpotifyTrack[]>(1);
+        this.preloadResult$ = new ReplaySubject<SpotifyPlaylist[]>(1);
       },
     });
   }
 
   /**
-   * Récupère les tracks préchargés pour la page /generate.
+   * Récupère les playlists préchargées pour la page /generate.
    * - Si le cache client contient les résultats → retour instantané
    * - Si un preload est en cours → attend sa complétion
    * - Si aucun preload et pas de cache → fallback avec weatherCode depuis localStorage
    */
-  getPreloadedTracks(): Observable<SpotifyTrack[]> {
+  getPreloadedPlaylists(): Observable<SpotifyPlaylist[]> {
     // Cas 1 : résultats déjà en cache client
     if (this.preloadedMood && this.searchCache.has(this.preloadedMood)) {
       return of(this.searchCache.get(this.preloadedMood)!);
@@ -115,33 +118,73 @@ export class SpotifyService {
       const { weather } = JSON.parse(weatherJson);
       const mood = this.getPlaylistMood(weather.weatherCode);
       this.preloadedMood = mood;
-      return this.searchTracks(mood);
+      return this.searchPlaylists(mood);
     }
 
     // Cas 4 : aucune donnée météo — mood par défaut
     this.preloadedMood = 'chill vibes music';
-    return this.searchTracks(this.preloadedMood);
+    return this.searchPlaylists(this.preloadedMood);
   }
 
   /**
-   * Recherche des tracks Spotify via le backend proxy.
-   * Utilise un cache client pour ne pas refaire la même requête.
+   * Recherche des playlists Spotify via le backend proxy.
+   * Vérifie d'abord le cache mémoire, puis localStorage, avant de faire un appel API.
    * @param mood Mots-clés de recherche (issus de getPlaylistMood)
    */
-  searchTracks(mood: string): Observable<SpotifyTrack[]> {
+  searchPlaylists(mood: string): Observable<SpotifyPlaylist[]> {
+    // 1. Cache mémoire (instantané)
     const cached = this.searchCache.get(mood);
     if (cached) {
       return of(cached);
     }
 
+    // 2. Cache localStorage (persiste entre les rechargements)
+    const localCached = this.getLocalCache(mood);
+    if (localCached) {
+      this.searchCache.set(mood, localCached);
+      return of(localCached);
+    }
+
+    // 3. Appel API (uniquement si aucun cache disponible)
     return this.http
-      .get<SpotifyTrack[]>(`${this.apiUrl}/spotify/search`, {
+      .get<SpotifyPlaylist[]>(`${this.apiUrl}/spotify/search`, {
         params: { mood },
       })
       .pipe(
-        tap((tracks) => this.searchCache.set(mood, tracks)),
-        catchError((err: HttpErrorResponse) => this.handleError('searchTracks', err))
+        tap((playlists) => {
+          this.searchCache.set(mood, playlists);
+          this.setLocalCache(mood, playlists);
+        }),
+        catchError((err: HttpErrorResponse) => this.handleError('searchPlaylists', err))
       );
+  }
+
+  /** Lit le cache localStorage pour un mood donné, retourne null si expiré ou absent */
+  private getLocalCache(mood: string): SpotifyPlaylist[] | null {
+    if (typeof localStorage === 'undefined') return null;
+    try {
+      const raw = localStorage.getItem(`skybeat_spotify_${mood}`);
+      if (!raw) return null;
+      const entry = JSON.parse(raw) as { playlists: SpotifyPlaylist[]; timestamp: number };
+      if (Date.now() - entry.timestamp > this.LOCAL_CACHE_TTL_MS) {
+        localStorage.removeItem(`skybeat_spotify_${mood}`);
+        return null;
+      }
+      return entry.playlists;
+    } catch {
+      return null;
+    }
+  }
+
+  /** Sauvegarde les résultats de recherche dans localStorage avec un timestamp */
+  private setLocalCache(mood: string, playlists: SpotifyPlaylist[]): void {
+    if (typeof localStorage === 'undefined') return;
+    try {
+      const entry = { playlists, timestamp: Date.now() };
+      localStorage.setItem(`skybeat_spotify_${mood}`, JSON.stringify(entry));
+    } catch {
+      // localStorage plein ou indisponible — on ignore silencieusement
+    }
   }
 
   /**
@@ -174,7 +217,12 @@ export class SpotifyService {
     } else if (error.status === 401) {
       message = 'Token OAuth manquant ou invalide.';
     } else if (error.status === 429) {
-      message = 'Limite de taux Spotify atteinte. Veuillez réessayer plus tard.';
+      const retryAfterSeconds = Number(error.error?.retryAfterSeconds);
+      if (Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0) {
+        message = `Limite de taux Spotify atteinte. Réessayez dans ${Math.ceil(retryAfterSeconds)} seconde(s).`;
+      } else {
+        message = 'Limite de taux Spotify atteinte. Veuillez réessayer plus tard.';
+      }
     } else {
       message = error.error?.error || `Erreur ${error.status} sur ${method}`;
     }

@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink, ActivatedRoute, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
+import { SettingsService } from '../../services/settings';
 
 @Component({
   selector: 'app-login',
@@ -17,6 +18,7 @@ export class LoginComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private platformId = inject(PLATFORM_ID);
+  constructor(private settingsService: SettingsService) {}
 
   email = '';
   password = '';
@@ -64,10 +66,47 @@ export class LoginComponent implements OnInit {
   }
 
   onLogin() {
-    // Logique de connexion à implémenter
     console.log('Login:', this.email);
-    // Simulation de connexion
-    this.isLoggedIn = true;
+
+    const payload = {
+      email: this.email.toUpperCase(),
+      password: this.password
+    };
+
+    interface SigninResponse {
+      id: string;
+      username: string;
+      parameters: {
+        musicPreference?: string;
+        autoPlay?: string;
+        notifications?: string;
+        theme?: string;
+      };
+    }
+
+    this.http.post<any>("http://localhost:3080/accounts/signin", payload)
+      .subscribe({
+        next: (res) => {
+
+          const parameters = res.user.parameters;
+
+          if (parameters) {
+            this.settingsService.setSettings(parameters);
+          } else {
+            console.warn("parameters not found in response");
+          }
+
+          this.isLoggedIn = true;
+        },
+
+        error: (err) => {
+
+          console.error("Signin error:", err);
+          if(err.status === 400) alert("Compte introuvable avec l'email : " + this.email);
+          else if (err.status === 401) alert("Mot de passe invalide !");
+          else alert("Erreur lors de la connexion");
+        }
+      });
   }
 
   onSpotifyLogin() {

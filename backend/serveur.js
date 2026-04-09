@@ -15,6 +15,7 @@ if (fs.existsSync(envFile)) {
 const express = require("express");
 const cors = require("cors");
 const axios = require("axios");
+const bcrypt = require("bcrypt");
 
 const app = express();
 const port = 3080;
@@ -127,6 +128,22 @@ function setCache(key, data) {
   memoryCache.set(key, entry);
   diskCache[key] = entry;
   saveDiskCache();
+}
+
+function normalizeSpotifyPlaylists(playlists) {
+  if (!Array.isArray(playlists)) return [];
+
+  return playlists
+    .filter((item) => item && item.playlistId)
+    .map((item) => ({
+      ...item,
+      spotifyUrl: item.spotifyUrl || `https://open.spotify.com/playlist/${item.playlistId}`,
+      title: item.title || "Untitled playlist",
+      owner: item.owner || "Spotify",
+      trackCount: Number.isFinite(item.trackCount) ? item.trackCount : 0,
+      description: item.description || "",
+      thumbnail: item.thumbnail || "",
+    }));
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -341,6 +358,54 @@ let spotifyTokenExpiry = 0;
 // (ex: Redis + cookies HttpOnly) au lieu d'une Map en mémoire.
 const userTokens = new Map();
 
+const SPOTIFY_MAX_RETRIES = 2;
+const SPOTIFY_MAX_RETRY_DELAY_MS = 10000;
+
+function parseRetryAfterMs(retryAfterHeader) {
+  if (!retryAfterHeader) return null;
+
+  const seconds = Number(retryAfterHeader);
+  if (Number.isFinite(seconds) && seconds >= 0) {
+    return Math.min(seconds * 1000, SPOTIFY_MAX_RETRY_DELAY_MS);
+  }
+
+  const dateMs = Date.parse(retryAfterHeader);
+  if (!Number.isNaN(dateMs)) {
+    return Math.min(Math.max(0, dateMs - Date.now()), SPOTIFY_MAX_RETRY_DELAY_MS);
+  }
+
+  return null;
+}
+
+function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function spotifyRequestWithRetry(requestFn, label) {
+  let attempt = 0;
+
+  while (true) {
+    try {
+      return await requestFn();
+    } catch (error) {
+      const status = error.response?.status;
+      const retryAfterHeader = error.response?.headers?.["retry-after"];
+      const retryAfterMs = parseRetryAfterMs(retryAfterHeader);
+
+      if (status !== 429 || attempt >= SPOTIFY_MAX_RETRIES) {
+        throw error;
+      }
+
+      const backoffMs = Math.min(1000 * 2 ** attempt, SPOTIFY_MAX_RETRY_DELAY_MS);
+      const delayMs = retryAfterMs ?? backoffMs;
+      attempt += 1;
+
+      console.warn(`Spotify rate limited on ${label}. Retry ${attempt}/${SPOTIFY_MAX_RETRIES} in ${delayMs}ms`);
+      await wait(delayMs);
+    }
+  }
+}
+
 async function getSpotifyAccessToken() {
   if (spotifyAccessToken && Date.now() < spotifyTokenExpiry) {
     return spotifyAccessToken;
@@ -356,15 +421,18 @@ async function getSpotifyAccessToken() {
   // Basic auth = base64(clientId:clientSecret), requis par le flow Client Credentials
   const authString = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
 
-  const response = await axios.post(
-    "https://accounts.spotify.com/api/token",
-    "grant_type=client_credentials",
-    {
-      headers: {
-        Authorization: `Basic ${authString}`,
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-    }
+  const response = await spotifyRequestWithRetry(
+    () => axios.post(
+      "https://accounts.spotify.com/api/token",
+      "grant_type=client_credentials",
+      {
+        headers: {
+          Authorization: `Basic ${authString}`,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      }
+    ),
+    "client_credentials_token"
   );
 
   spotifyAccessToken = response.data.access_token;
@@ -501,33 +569,47 @@ app.get("/spotify/search", async (req, res) => {
     const cached = getCachedOrNull(cacheKey);
     if (cached) {
       console.log("Spotify search cache hit:", mood);
-      return res.json(cached);
+      const normalizedCached = normalizeSpotifyPlaylists(cached);
+      return res.json(normalizedCached);
     }
 
     const accessToken = await getSpotifyAccessToken();
 
-    const searchParams = new URLSearchParams({ q: String(mood), type: "track" });
+    const searchParams = new URLSearchParams({
+      q: String(mood),
+      type: "playlist",
+      limit: "10"
+    });
     const url = `https://api.spotify.com/v1/search?${searchParams.toString()}`;
     console.log("Spotify search URL:", url);
 
-    const response = await axios.get(url, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
+    const response = await spotifyRequestWithRetry(
+      () => axios.get(url, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      }),
+      "search_playlists"
+    );
 
     // On ne garde que les champs utiles pour le frontend
-    // (la réponse brute Spotify fait ~50 champs par track)
-    const tracks = response.data.tracks.items.map((item) => ({
-      trackId: item.id,
-      title: item.name,
-      artist: item.artists.map((a) => a.name).join(", "),
-      album: item.album.name,
-      thumbnail: item.album.images[1]?.url || item.album.images[0]?.url || "",
-      previewUrl: item.preview_url,
-    }));
+    // (la réponse brute Spotify fait ~50 champs par track) avec les playlists
+    const playlists = response.data.playlists.items
+      .filter((item) => item && item.id)
+      .map((item) => ({
+      playlistId: item.id,
+      title: item.name || "Untitled playlist",
+      owner: item.owner?.display_name || "Spotify",
+      trackCount: item.tracks?.total ?? 0,
+      thumbnail:
+        item.images[0]?.url || "",
+      description: item.description || "",
+      spotifyUrl: item.external_urls?.spotify || `https://open.spotify.com/playlist/${item.id}`,
+      }));
 
-    setCache(cacheKey, tracks);
-    console.log(`Spotify search: ${tracks.length} tracks for "${mood}"`);
-    res.json(tracks);
+    const normalizedPlaylists = normalizeSpotifyPlaylists(playlists);
+
+    setCache(cacheKey, normalizedPlaylists);
+    console.log(`Spotify search: ${normalizedPlaylists.length} playlists for "${mood}"`);
+    res.json(normalizedPlaylists);
   } catch (error) {
     if (error.response) {
       const status = error.response.status;
@@ -544,9 +626,11 @@ app.get("/spotify/search", async (req, res) => {
         });
       }
       if (status === 429) {
+        const retryAfterSeconds = Number(error.response.headers?.["retry-after"]);
         return res.status(429).json({
           error: "Spotify rate limit exceeded",
           details: spotifyError?.message,
+          retryAfterSeconds: Number.isFinite(retryAfterSeconds) ? retryAfterSeconds : undefined,
         });
       }
       return res.status(status).json({ error: spotifyError?.message || "Spotify API error" });
@@ -581,13 +665,19 @@ app.post("/spotify/playlist", async (req, res) => {
     const apiBase = "https://api.spotify.com/v1";
 
     // L'ID utilisateur est nécessaire pour l'endpoint de création de playlist
-    const userRes = await axios.get(`${apiBase}/me`, { headers });
+    const userRes = await spotifyRequestWithRetry(
+      () => axios.get(`${apiBase}/me`, { headers }),
+      "get_user_profile"
+    );
     const userId = userRes.data.id;
 
-    const playlistRes = await axios.post(
-      `${apiBase}/users/${userId}/playlists`,
-      { name: title, description: "Playlist générée par SkyBeat", public: false },
-      { headers }
+    const playlistRes = await spotifyRequestWithRetry(
+      () => axios.post(
+        `${apiBase}/users/${userId}/playlists`,
+        { name: title, description: "Playlist générée par SkyBeat", public: false },
+        { headers }
+      ),
+      "create_playlist"
     );
 
     const playlistId = playlistRes.data.id;
@@ -599,7 +689,10 @@ app.post("/spotify/playlist", async (req, res) => {
     for (let i = 0; i < trackUris.length; i += 100) {
       const chunk = trackUris.slice(i, i + 100);
       try {
-        await axios.post(`${apiBase}/playlists/${playlistId}/tracks`, { uris: chunk }, { headers });
+        await spotifyRequestWithRetry(
+          () => axios.post(`${apiBase}/playlists/${playlistId}/tracks`, { uris: chunk }, { headers }),
+          `add_tracks_chunk_${i}_${i + chunk.length}`
+        );
       } catch (err) {
         console.error(`Failed to add tracks chunk ${i}-${i + chunk.length}:`, err.message);
         errors.push(...chunk);
@@ -622,10 +715,127 @@ app.post("/spotify/playlist", async (req, res) => {
       const status = error.response.status;
       const spotifyError = error.response.data?.error;
       console.error("Spotify playlist error:", status, spotifyError?.message);
+      if (status === 429) {
+        const retryAfterSeconds = Number(error.response.headers?.["retry-after"]);
+        return res.status(429).json({
+          error: "Spotify rate limit exceeded",
+          details: spotifyError?.message,
+          retryAfterSeconds: Number.isFinite(retryAfterSeconds) ? retryAfterSeconds : undefined,
+        });
+      }
       return res.status(status).json({ error: spotifyError?.message || "Spotify API error" });
     }
     console.error("Spotify playlist creation error:", error.message);
     res.status(500).json({ error: "Failed to create Spotify playlist" });
+  }
+});
+
+const USERS_FILE = "data/users.json";
+const SALT_ROUNDS = parseInt(process.env.SALT_ROUNDS);
+
+// --- Fonction utilitaire pour lire les users ---
+function readUsers() {
+  if (!fs.existsSync(USERS_FILE)) {
+    return [];
+  }
+  const data = fs.readFileSync(USERS_FILE, "utf-8");
+  return JSON.parse(data);
+}
+
+// --- Fonction utilitaire pour sauvegarder ---
+function saveUsers(users) {
+  fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2), "utf-8");
+}
+
+// --- ROUTE SIGNUP ---
+app.post("/accounts/signup", async (req, res) => {
+  try {
+    console.log("ok");
+    const { username, email, password, parameters } = req.body;
+
+    if (!username || !email || !password || !parameters) {
+      return res.status(400).json({ error: "Missing fields" });
+    }
+
+    let users = readUsers();
+
+    const existingUser = users.find(user => user.email === email);
+
+    if (existingUser) {
+      return res.status(400).json({ error: "User already exists" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+
+    const newUser = {
+      id: Date.now(),
+      username,
+      email,
+      password: hashedPassword,
+      parameters
+    };
+
+    users.push(newUser);
+
+    saveUsers(users);
+
+    res.json({
+      message: "User created",
+      user: {
+        id: newUser.id,
+        username,
+        email,
+        parameters
+      }
+    });
+
+  } catch (error) {
+
+    console.error("Signup error:", error.message);
+    res.status(500).json({ error: "Signup failed" });
+
+  }
+});
+
+
+
+// --- ROUTE SIGNIN ---
+app.post("/accounts/signin", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ error: "Missing fields" });
+    }
+
+    const users = readUsers();
+
+    const user = users.find(u => u.email === email);
+
+    if (!user) {
+      return res.status(400).json({ error: "User not found" });
+    }
+
+    const validPassword = await bcrypt.compare(password, user.password);
+
+    if (!validPassword) {
+      return res.status(401).json({ error: "Invalid password" });
+    }
+
+    res.json({
+      message: "Login successful",
+      user: {
+        id: user.id,
+        username: user.username,
+        parameters: user.parameters
+      }
+    });
+
+  } catch (error) {
+
+    console.error("Signin error:", error.message);
+    res.status(500).json({ error: "Signin failed" });
+
   }
 });
 

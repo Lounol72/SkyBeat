@@ -169,9 +169,9 @@ export class HeroComponent implements OnInit {
             location: data.weather.location
           });
           this.isLoadingWeather.set(false);
-          // Précharger les tracks YouTube et Spotify en arrière-plan
+          // Précharger les tracks YouTube et playlists Spotify en arrière-plan
           this.youtubeService.preloadTracks(data.weather.weatherCode);
-          this.spotifyService.preloadTracks(data.weather.weatherCode);
+          this.spotifyService.preloadPlaylists(data.weather.weatherCode);
           console.log("Weather Data loaded from LocalStorage.")
         }
         else{
@@ -236,9 +236,9 @@ export class HeroComponent implements OnInit {
 
           this.isLoadingWeather.set(false);
 
-          // Précharger les tracks YouTube et Spotify en arrière-plan
+          // Précharger les tracks YouTube et playlists Spotify en arrière-plan
           this.youtubeService.preloadTracks(response.weatherCode);
-          this.spotifyService.preloadTracks(response.weatherCode);
+          this.spotifyService.preloadPlaylists(response.weatherCode);
 
           /**
            *  Saving weather data in LocalStorage

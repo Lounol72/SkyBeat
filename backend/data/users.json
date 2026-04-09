@@ -10,5 +10,17 @@
       "notifications": "true",
       "theme": "dark"
     }
+  },
+  {
+    "id": 1775666164268,
+    "username": "Gartin",
+    "email": "GARTIN.DUBOIS@EMAIL.TEST",
+    "password": "$2b$10$JE4h/Z31JnXhALsgqn7cc.dJ9j2zmhdEfTfE06QP57L9bi.D5tEIS",
+    "parameters": {
+      "musicPreference": "spotify",
+      "autoPlay": "false",
+      "notifications": "false",
+      "theme": "light"
+    }
   }
 ]
